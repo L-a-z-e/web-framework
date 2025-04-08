@@ -1,0 +1,47 @@
+# .dockerignore
+
+# Git 관련 파일
+.git
+.gitignore
+.gitattributes
+
+# IDE 설정 파일
+.idea/
+*.iml
+.vscode/
+
+# 로컬 환경 변수 파일
+.env
+.env.*
+!.env.example
+
+# 빌드 결과물 (Dockerfile 내부에서 생성하므로 복사 대상에서 제외)
+**/build/
+**/out/
+# Maven 사용 시
+**/target/
+# Frontend 빌드 결과물 (Dockerfile에서 생성)
+**/dist/
+
+# 로컬 의존성 폴더
+**/node_modules/
+
+# 로그 파일
+*.log
+
+# OS 생성 파일
+.DS_Store
+Thumbs.db
+
+# Docker 관련 파일 자체 제외 (Dockerfile, docker-compose.yml 등)
+Dockerfile
+docker-compose.yml
+# Frontend 모듈의 nginx.conf 는 복사 대상이므로 필요시 경로 명시 제외
+nginx.conf
+
+# 테스트 관련 파일 (필요시)
+# **/src/test/
+
+# 문서/스크립트 (필요시)
+docs/
+scripts/

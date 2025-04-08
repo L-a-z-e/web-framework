@@ -1,0 +1,27 @@
+# docker-compose.yml
+services:
+  backend:
+    build:
+      context: . # 빌드 컨텍스트를 프로젝트 루트로 변경
+      dockerfile: backend/Dockerfile # Dockerfile 경로 명시
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=local
+    networks:
+      - web-framework-network
+
+  frontend:
+    build:
+      context: . # 빌드 컨텍스트를 프로젝트 루트로 변경
+      dockerfile: frontend/Dockerfile # Dockerfile 경로 명시
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - web-framework-network
+
+networks:
+  web-framework-network:
+    driver: bridge
