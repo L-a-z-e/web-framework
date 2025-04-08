@@ -1,0 +1,28 @@
+// 루트 build.gradle
+
+// 모든 하위 프로젝트에 적용될 설정 (공통 설정)
+subprojects {
+    apply plugin: 'java' // 예시: 모든 하위 프로젝트에 기본적으로 Java 플러그인 적용 (필요에 따라 수정)
+
+    sourceCompatibility = JavaVersion.VERSION_17 // 사용할 Java 버전 명시
+    targetCompatibility = JavaVersion.VERSION_17
+
+    repositories {
+        mavenCentral()
+        // 필요한 경우 다른 저장소 추가 (예: jcenter(), maven { url '...' })
+    }
+
+    // 모든 하위 프로젝트에 공통으로 필요한 의존성이나 설정 추가 가능
+    // 예: dependencies { ... }
+    // 예: test { useJUnitPlatform() }
+}
+
+// 루트 프로젝트 자체에만 필요한 설정 (거의 사용 안 함)
+// apply plugin: ...
+// dependencies { ... }
+
+// 모든 프로젝트(루트 포함)에 적용될 설정 (allprojects 블록도 가능하나 subprojects가 더 명확할 수 있음)
+// allprojects { ... }
+
+// 루트 프로젝트 레벨의 커스텀 Task 정의 등
+// task clean(type: Delete) { ... }

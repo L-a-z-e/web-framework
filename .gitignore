@@ -1,0 +1,44 @@
+# .gitignore
+
+# Gradle
+.gradle/
+build/
+out/
+
+# Gradle Wrapper (이 파일들은 커밋해야 함!)
+!gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties
+!gradlew
+!gradlew.bat
+
+# IDE files
+.idea/
+*.iml
+*.ipr
+*.iws
+.project
+.classpath
+.settings/
+*.vscode/
+
+# Build Artifacts
+*.jar
+*.war
+*.ear
+
+# Log files
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Node / Frontend
+node_modules/
+dist/
+coverage/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.env
+.env.*

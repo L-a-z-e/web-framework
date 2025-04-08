@@ -1,0 +1,24 @@
+// settings.gradle
+
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        // 필요한 경우 다른 플러그인 저장소 추가 (예: maven { url '...' })
+    }
+}
+
+rootProject.name = 'web-framework' // 루트 프로젝트 이름 설정
+
+// 하위 모듈(프로젝트) 포함
+include 'backend'
+include 'frontend' // Gradle로 프론트엔드 빌드를 관리할 수도 있지만, 보통 npm/yarn 스크립트를 실행하는 방식으로 연동
+include 'batch'
+include 'common' // common 모듈을 만들었다면 포함
+// 필요에 따라 다른 모듈도 추가
+
+// frontend 모듈의 프로젝트 디렉토리 지정 (선택적이지만 명시)
+project(':frontend').projectDir = file('frontend')
+project(':backend').projectDir = file('backend')
+project(':batch').projectDir = file('batch')
+project(':common').projectDir = file('common')
+// 다른 모듈들도 필요시 명시적으로 지정 가능 (보통 이름과 동일하면 생략 가능)
