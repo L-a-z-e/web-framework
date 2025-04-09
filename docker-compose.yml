@@ -4,12 +4,21 @@ services:
     build:
       context: . # 빌드 컨텍스트를 프로젝트 루트로 변경
       dockerfile: backend/Dockerfile # Dockerfile 경로 명시
+    env_file:
+      - common.env
+      - mariadb.env
     ports:
       - "8080:8080"
     environment:
-      - SPRING_PROFILES_ACTIVE=local
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
+      - SPRING_DATASOURCE_URL=${DB_URL}
+      - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
     networks:
       - web-framework-network
+    depends_on: # DB가 먼저 뜨도록 의존성 추가
+#      - oracle-db
+      - mariadb
 
   frontend:
     build:
@@ -22,6 +31,71 @@ services:
     networks:
       - web-framework-network
 
+  # --- Oracle DB ---
+#  oracle-db:
+#    image: ${ORACLE_IMAGE}
+#    container_name: oracle-db-container
+#    ports:
+#      - "1521:1521" # 로컬 1521 포트 <-> 컨테이너 1521 포트
+#    environment:
+#      # XE 데이터베이스 생성 및 비밀번호 설정 (SYS, SYSTEM, PDBADMIN 공통)
+#      - ORACLE_PASSWORD=${DB_PASSWORD}
+#      # 생성될 기본 PDB 이름
+#      - ORACLE_PDB=ORCLFW
+#      # Docker 컨테이너 내 Oracle Listener 설정 (도메인 없이 호스트 이름만 사용)
+#      - ORACLE_HOSTNAME=oracle-db
+#    volumes:
+#      # DB 데이터를 영구적으로 저장하기 위한 볼륨 설정
+#      # 명명된 볼륨 'oracle-data'를 컨테이너 내부 /opt/oracle/oradata 경로에 연결
+#      - oracle-data:/opt/oracle/oradata
+#    networks:
+#      - web-framework-network
+#    healthcheck: # 컨테이너가 DB 서비스 준비될 때까지 기다리도록 설정 (Optional)
+#      test: ["CMD", "sqlplus", "-L", "sys/${ORACLE_PASSWORD}@//localhost:1521/ORCLFW as sysdba", "@/.oracle_healthcheck.sql"]
+#      interval: 30s
+#      timeout: 10s
+#      retries: 5
+#      start_period: 80s # 컨테이너 시작 후 healthcheck 시작까지 대기 시간
+
+  # --- MariaDB 서비스 정의로 교체 ---
+  mariadb:
+    image: mariadb:latest # 공식 MariaDB 이미지 사용 (특정 버전 명시 가능, 예: mariadb:10.11)
+    container_name: mariadb-container # 컨테이너 이름 지정 (optional)
+    ports:
+      - "3307:3306" # MariaDB 기본 포트 3306 연결
+    environment:
+      # 루트 사용자 비밀번호 설정
+      - MARIADB_ROOT_PASSWORD=${ROOT_DB_PASSWORD}
+      # 생성할 데이터베이스 이름
+      - MARIADB_DATABASE=${DB_NAME}
+      # 생성할 사용자 이름
+      - MARIADB_USER=${DB_USERNAME}
+      # 생성할 사용자의 비밀번호
+      - MARIADB_PASSWORD=${DB_PASSWORD}
+    volumes:
+      # DB 데이터를 영구적으로 저장하기 위한 볼륨 설정
+      # volume 'mariadb-data'를 컨테이너 내부 /var/lib/mysql 경로에 연결
+      - mariadb-data:/var/lib/mysql
+      # (optional) 초기화 스크립트 마운트: 컨테이너 처음 시작 시 실행될 .sql, .sh 파일 마운트 가능
+      # - ./db/init:/docker-entrypoint-initdb.d
+    networks:
+      - web-framework-network
+    command: # 문자셋 및 시간대 설정 추가 (권장)
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-time-zone=Asia/Seoul
+    healthcheck: # MariaDB/MySQL healthcheck
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost", "-u", "root", "-p${MARIADB_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
 networks:
   web-framework-network:
     driver: bridge
+
+# --- 볼륨 정의 추가 ---
+volumes:
+#  oracle-data:
+  mariadb-data:
