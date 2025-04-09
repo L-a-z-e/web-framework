@@ -1,0 +1,31 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports: ["9001:9001"]
+    environment:
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
+      - SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL}
+      - SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD}
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=${SPRING_DATASOURCE_DRIVER_CLASS_NAME}
+
+    networks:
+      - web-framework-network
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    ports: ["9000:9000"]
+    environment:
+      - NGINX_PROXY_PASS=http://backend:9001
+      - VUE_APP_API_URL=${VUE_APP_API_URL:-http://localhost:9001}
+    depends_on: backend
+    networks:
+      - web-framework-network
+
+  # batch: # 필요시 batch 서비스 추가 (외부 DB 용)
+networks:
+  web-framework-network:
+    driver: bridge

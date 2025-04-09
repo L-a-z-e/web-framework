@@ -1,42 +1,28 @@
 plugins {
-    id 'java'
-    id 'org.springframework.boot' version '3.4.4'
-    id 'io.spring.dependency-management' version '1.1.7'
+    id 'org.springframework.boot' // 버전은 루트에서 관리됨
+    // java, io.spring.dependency-management는 루트에서 적용됨 (삭제)
 }
 
-group = 'com.laze'
-version = '0.0.1-SNAPSHOT'
-
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(17)
-    }
-}
-
-configurations {
-    compileOnly {
-        extendsFrom annotationProcessor
-    }
-}
-
-repositories {
-    mavenCentral()
-}
+// group, version, java toolchain, repositories 삭제 (루트에서 상속)
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.4'
-    compileOnly 'org.projectlombok:lombok'
+    implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.4' // 버전은 BOM에서 관리될 수 있음
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
-    annotationProcessor 'org.projectlombok:lombok'
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testImplementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter-test:3.0.4'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-    implementation 'org.mariadb.jdbc:mariadb-java-client'
-}
 
-tasks.named('test') {
-    useJUnitPlatform()
+    // DB 드라이버 (MariaDB 사용 시 유지)
+    // implementation -> runtimeOnly 변경 고려
+    runtimeOnly 'org.mariadb.jdbc:mariadb-java-client'
+
+    // 공통 모듈 의존성 추가 (libs 모듈 생성 후)
+//    implementation project(':libs:common-dto')
+//    implementation project(':libs:common-util')
+
+    // MapStruct (필요시 추가)
+    implementation 'org.mapstruct:mapstruct' // 버전은 루트 dependencyManagement에서 관리
+    annotationProcessor 'org.mapstruct:mapstruct-processor'
+
+    testImplementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter-test:3.0.4'
 }

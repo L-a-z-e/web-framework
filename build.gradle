@@ -1,28 +1,48 @@
-// 루트 build.gradle
+plugins {
+    id 'java' // 기본 Java 기능은 필요
+    id 'org.springframework.boot' version '3.4.4' apply false // 버전 관리 (3.4.4를 쓰려면 여기와 backend 모두 수정)
+    id 'io.spring.dependency-management' version '1.1.7' apply false // 버전 관리 (1.1.7를 쓰려면 여기와 backend 모두 수정)
+}
 
-// 모든 하위 프로젝트에 적용될 설정 (공통 설정)
-subprojects {
-    apply plugin: 'java' // 예시: 모든 하위 프로젝트에 기본적으로 Java 플러그인 적용 (필요에 따라 수정)
-
-    sourceCompatibility = JavaVersion.VERSION_17 // 사용할 Java 버전 명시
-    targetCompatibility = JavaVersion.VERSION_17
+allprojects {
+    group = 'com.yourcompany.framework' // 실제 그룹 ID로 변경 (예: com.laze)
+    version = '1.0.0-SNAPSHOT' // 초기 버전 설정
 
     repositories {
         mavenCentral()
-        // 필요한 경우 다른 저장소 추가 (예: jcenter(), maven { url '...' })
     }
-
-    // 모든 하위 프로젝트에 공통으로 필요한 의존성이나 설정 추가 가능
-    // 예: dependencies { ... }
-    // 예: test { useJUnitPlatform() }
 }
 
-// 루트 프로젝트 자체에만 필요한 설정 (거의 사용 안 함)
-// apply plugin: ...
-// dependencies { ... }
+subprojects { // frontend 제외하고 적용하려면 조건을 추가할 수 있음 (if project.name != 'frontend')
+    apply plugin: 'java'
+    apply plugin: 'io.spring.dependency-management'
 
-// 모든 프로젝트(루트 포함)에 적용될 설정 (allprojects 블록도 가능하나 subprojects가 더 명확할 수 있음)
-// allprojects { ... }
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 
-// 루트 프로젝트 레벨의 커스텀 Task 정의 등
-// task clean(type: Delete) { ... }
+    // dependencyManagement: 모든 Java 하위 프로젝트에 Spring Boot BOM 적용
+    dependencyManagement {
+        imports {
+            mavenBom org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES
+        }
+        // 공통 라이브러리 버전 관리
+        dependencies {
+            dependency 'org.mapstruct:mapstruct:1.6.3'
+        }
+    }
+
+    // dependencies: 모든 Java 하위 프로젝트에 공통으로 필요한 의존성
+    dependencies {
+        compileOnly 'org.projectlombok:lombok'
+        annotationProcessor 'org.projectlombok:lombok'
+
+        testImplementation 'org.springframework.boot:spring-boot-starter-test'
+        testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+        implementation 'org.mapstruct:mapstruct:1.6.3'
+        annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
+    }
+
+    test {
+        useJUnitPlatform()
+    }
+}

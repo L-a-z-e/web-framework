@@ -1,30 +1,10 @@
-# Spring 설정
 spring:
-  # Datasource 설정
   datasource:
-    # 환경 변수 ${SPRING_DATASOURCE_URL}을 사용하고, 없으면 기본값 사용
-    url: ${SPRING_DATASOURCE_URL}
-    # 환경 변수 ${SPRING_DATASOURCE_USERNAME}을 사용하고, 없으면 기본값 사용
-    username: ${SPRING_DATASOURCE_USERNAME}
-    # 환경 변수 ${SPRING_DATASOURCE_PASSWORD}을 사용하고, 없으면 기본값 사용
-    password: ${SPRING_DATASOURCE_PASSWORD}
-
-# MyBatis 설정
-mybatis:
-  # Mapper XML 파일 위치
-  mapper-locations: classpath:/mapper/**/*.xml
-  # MyBatis 추가 설정
-  configuration:
-    # 스네이크 케이스(DB 컬럼) <-> 카멜 케이스(DTO 필드) 자동 매핑 활성화
-    map-underscore-to-camel-case: true
-
-# 로깅 설정
+    url: ${SPRING_DATASOURCE_URL} # 기본값: 로컬 설치 DB 예시
+    username: ${SPRING_DATASOURCE_USERNAME} # 기본값: 로컬 설치 DB 사용자 예시
+    password: ${SPRING_DATASOURCE_PASSWORD} # !!! 비밀번호는 환경 변수로 주입 필수 (기본값 없음) !!!
+    driver-class-name: ${SPRING_DATASOURCE_DRIVER_CLASS_NAME}
 logging:
   level:
-    # 루트 로거 레벨
-    root: INFO
-    # com.laze.backend 패키지 이하 로거 레벨
     com.laze.backend: DEBUG
-    # 필요시 다른 로거 레벨 추가
-    # org.springframework.jdbc.core: DEBUG
-    # org.mybatis: TRACE
+    org.mybatis: TRACE

@@ -1,0 +1,71 @@
+services:
+  mariadb-local:
+    image: mariadb:latest
+    container_name: ${MARIADB_DATABASE}
+    ports:
+      - "3307:3306" # host port : container port
+    environment:
+      - MARIADB_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD}
+      - MARIADB_DATABASE=${MARIADB_DATABASE}
+      - MARIADB_USER=${MARIADB_USER}
+      - MARIADB_PASSWORD=${MARIADB_PASSWORD}
+    volumes:
+      # DB 데이터를 영구적으로 저장하기 위한 볼륨 설정
+      # volume 'mariadb-local-data'를 컨테이너 내부 /var/lib/mysql 경로에 연결
+      - mariadb-local-data:/var/lib/mysql
+      # (optional) 초기화 스크립트 마운트: 컨테이너 처음 시작 시 실행될 .sql, .sh 파일 마운트 가능
+      # - ./db/init:/docker-entrypoint-initdb.d
+    networks:
+      - web-framework-network
+    command: # charset / timezone 설정 추가
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-time-zone=Asia/Seoul
+    healthcheck: # MariaDB/MySQL healthcheck
+      test: [ "CMD", "mysqladmin" ,"ping", "-h", "localhost", "-u", "root", "-p${MARIADB_ROOT_PASSWORD}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "9001:9001"
+    environment:
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
+      - SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL}
+      - SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD}
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=${SPRING_DATASOURCE_DRIVER_CLASS_NAME}
+    networks:
+      - web-framework-network
+
+    depends_on:
+      mariadb-local:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    ports:
+      - "9000:9000"
+    environment:
+      - NGINX_PROXY_PASS=http://backend:9001
+      - VUE_APP_API_URL=${VUE_APP_API_URL:-http://localhost:9001}
+    depends_on:
+      - backend
+    networks:
+      - web-framework-network
+
+networks:
+  web-framework-network:
+    driver: bridge
+
+# --- 볼륨 정의 추가 ---
+volumes:
+#  oracle-data:
+  mariadb-local-data:

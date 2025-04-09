@@ -33,9 +33,11 @@
 .DS_Store
 Thumbs.db
 
-# Docker 관련 파일 자체 제외 (Dockerfile, docker-compose.yml 등)
+# Docker 관련 파일 자체 제외 (Dockerfile, docker-compose.local.yml 등)
 Dockerfile
-docker-compose.yml
+docker-compose.local.yml
+docker-compose.dev.yml
+docker-compose-external.yml
 # Frontend 모듈의 nginx.conf 는 복사 대상이므로 필요시 경로 명시 제외
 nginx.conf
 
