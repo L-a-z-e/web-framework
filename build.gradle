@@ -1,3 +1,5 @@
+import org.springframework.boot.gradle.plugin.SpringBootPlugin
+
 plugins {
     id 'java' // 기본 Java 기능은 필요
     id 'org.springframework.boot' version '3.4.4' apply false // 버전 관리 (3.4.4를 쓰려면 여기와 backend 모두 수정)
@@ -23,7 +25,7 @@ subprojects { // frontend 제외하고 적용하려면 조건을 추가할 수 �
     // dependencyManagement: 모든 Java 하위 프로젝트에 Spring Boot BOM 적용
     dependencyManagement {
         imports {
-            mavenBom org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES
+            mavenBom SpringBootPlugin.BOM_COORDINATES
         }
         // 공통 라이브러리 버전 관리
         dependencies {
