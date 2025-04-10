@@ -15,8 +15,8 @@ COPY gradle ./gradle/
 COPY settings.gradle build.gradle ./
 # 각 모듈의 build.gradle 복사 (libs는 backend가 의존하므로 캐싱에 중요)
 COPY backend/build.gradle ./backend/
-#COPY libs/common-dto/build.gradle ./libs/common-dto/
-#COPY libs/common-util/build.gradle ./libs/common-util/
+#COPY libs/com.laze.common-dto/build.gradle ./libs/com.laze.common-dto/
+#COPY libs/com.laze.common-util/build.gradle ./libs/com.laze.common-util/
 
 # 배치 추가시 수정
 # COPY batch/build.gradle ./batch/

@@ -11,17 +11,20 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.4' // 버전은 BOM에서 관리될 수 있음
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    testImplementation 'org.springframework.security:spring-security-test'
 
     // DB 드라이버 (MariaDB 사용 시 유지)
     // implementation -> runtimeOnly 변경 고려
     runtimeOnly 'org.mariadb.jdbc:mariadb-java-client'
 
     // 공통 모듈 의존성 추가 (libs 모듈 생성 후)
-//    implementation project(':libs:common-dto')
-//    implementation project(':libs:common-util')
+//    implementation project(':libs:com.laze.common-dto')
+//    implementation project(':libs:com.laze.common-util')
 
     // MapStruct (필요시 추가)
-    implementation 'org.mapstruct:mapstruct' // 버전은 루트 dependencyManagement에서 관리
+    implementation 'org.mapstruct:mapstruct'
     annotationProcessor 'org.mapstruct:mapstruct-processor'
 
     testImplementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter-test:3.0.4'

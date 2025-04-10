@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: web-framework-batch
+  batch:
+    jdbc:
+      # 데이터베이스 종류에 따라 자동으로 감지하거나, 명시적으로 platform: mariadb 등 설정 가능
+      # 테이블 자동 생성 여부 (개발 초기에는 always 권장)
+      initialize-schema: always
+    job:
+      # 애플리케이션 시작 시 Job 자동 실행 비활성화 (명령줄 인수로 지정하여 실행)
+      enabled: true
+logging:
+  level:
+    root: INFO
+    com.laze.batch: INFO # Batch 모듈 루트 패키지
+    org.springframework.batch: INFO # Spring Batch 프레임워크 로그 레벨

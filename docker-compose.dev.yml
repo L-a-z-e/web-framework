@@ -51,6 +51,22 @@ services:
     networks:
       - web-framework-network
 
+  batch: # Batch 서비스 정의 추가
+    build:
+      context: .
+      dockerfile: batch/Dockerfile # batch 용 Dockerfile 지정
+    environment:
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
+      - SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL}
+      - SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD}
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=${SPRING_DATASOURCE_DRIVER_CLASS_NAME}
+      - JOB_NAME=${JOB_NAME:-samplejob}
+    networks:
+      - web-framework-network
+    depends_on:
+      - mariadb-dev
+
 networks:
   web-framework-network:
     driver: bridge

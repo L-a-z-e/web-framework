@@ -13,5 +13,7 @@ rootProject.name = 'web-framework' // 루트 프로젝트 이름 설정
 include 'backend'
 //include 'frontend'
 include 'batch'
-include 'libs:common-dto'
-include 'libs:common-util'
+include 'libs:com.laze.common-dto'
+include 'libs:com.laze.common-util'
+include 'batch'
+

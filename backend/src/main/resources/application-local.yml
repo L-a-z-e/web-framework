@@ -8,3 +8,4 @@ logging:
   level:
     com.laze.backend: DEBUG
     org.mybatis: TRACE
+    org.springframework.security: TRACE

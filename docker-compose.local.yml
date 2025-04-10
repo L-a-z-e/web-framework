@@ -61,6 +61,21 @@ services:
     networks:
       - web-framework-network
 
+  batch: # Batch 서비스 정의 추가
+    build:
+      context: .
+      dockerfile: batch/Dockerfile
+    environment:
+      # 외부 DB 사용 시 프로파일 및 DB 정보 (환경 변수로 주입 필수)
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
+      - SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL}
+      - SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD}
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=${SPRING_DATASOURCE_DRIVER_CLASS_NAME}
+      - JOB_NAME=${JOB_NAME:-sampleJob} # 외부 환경 변수 또는 .env 파일로 전달
+    networks:
+      - external-network # 다른 서비스와 동일 네트워크
+
 networks:
   web-framework-network:
     driver: bridge

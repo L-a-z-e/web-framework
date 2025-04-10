@@ -1,0 +1,37 @@
+plugins {
+    id 'org.springframework.boot' // Spring Boot 플러그인 적용
+    id 'java' // Java 플러그인 (IDE가 자동으로 추가했을 수 있음)
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // === Spring Batch 필수 의존성 ===
+    implementation 'org.springframework.boot:spring-boot-starter-batch'
+
+    // === DB 접속 및 JDBC 관련 ===
+    implementation 'org.springframework.boot:spring-boot-starter-jdbc'
+    runtimeOnly 'org.mariadb.jdbc:mariadb-java-client'
+    // === 기타 필요한 의존성 ===
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+
+    // === 공통 모듈 의존성 (필요시) ===
+    // implementation project(':libs:com.laze.common-dto')
+    // implementation project(':libs:com.laze.common-util')
+
+    // === 테스트 관련 ===
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.batch:spring-batch-test'
+    testImplementation platform('org.junit:junit-bom:5.10.0')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+// 부팅 가능한 JAR 생성 설정
+bootJar { enabled = true }
