@@ -5,7 +5,7 @@
         <Expand v-if="isCollapsed" />
         <Fold v-else />
       </el-icon>
-      <!-- 브레드크럼 -->
+
       <el-breadcrumb separator="/">
         <el-breadcrumb-item :to="{ path: '/' }">HOME</el-breadcrumb-item>
         <el-breadcrumb-item>{{ currentRouteTitle }}</el-breadcrumb-item>
@@ -20,9 +20,9 @@
           </el-badge>
         </el-tooltip>
         <el-dropdown>
-           <span class="user-info">
-             <el-avatar size="small" :icon="UserFilled" class="user-avatar"/> Test User <el-icon><ArrowDown /></el-icon>
-           </span>
+          <span class="user-info">
+            <el-avatar size="small" :icon="UserFilled" class="user-avatar"/> Test User <el-icon><ArrowDown /></el-icon>
+          </span>
           <template #dropdown>
             <el-dropdown-menu>
               <el-dropdown-item>Profile</el-dropdown-item>
@@ -36,9 +36,9 @@
 </template>
 
 <script setup lang="ts">
-// --- Script 부분은 이전 답변과 동일하게 유지 ---
 import { defineProps, defineEmits, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+import { useAuthStore } from '@/store';
 import {
   ElHeader, ElIcon, ElInput, ElBadge, ElDropdown, ElDropdownMenu, ElDropdownItem, ElAvatar, ElBreadcrumb, ElBreadcrumbItem, ElTooltip // Tooltip 추가
 } from 'element-plus';
@@ -58,10 +58,10 @@ function logout() { router.push('/login'); }
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: 50px; /* 헤더 높이 50px */
-  padding: 0 20px; /* 좌우 패딩 */
-  border-bottom: 1px solid #f0f2f5; /* 헤더 하단 구분선 */
-  box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08); /* 그림자 */
+  height: 50px;
+  padding: 0 20px;
+  border-bottom: 1px solid #f0f2f5;
+  box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
 }
 
 .header-left {
@@ -70,35 +70,34 @@ function logout() { router.push('/login'); }
 }
 
 .sidebar-toggle {
-  font-size: 20px; /* 아이콘 크기 */
+  font-size: 20px;
   cursor: pointer;
-  margin-right: 15px; /* 브레드크럼과의 간격 */
-  color: #515a6e; /* 아이콘 색상 */
+  margin-right: 15px;
+  color: #515a6e;
 }
 .sidebar-toggle:hover {
-  color: #409EFF; /* 호버 색상 */
+  color: #409EFF;
 }
 
 .el-breadcrumb {
-  margin-left: 0; /* 토글 아이콘과의 간격으로 조정 */
+  margin-left: 0;
 }
-/* 브레드크럼 내부 스타일 조정 */
+
 .el-breadcrumb :deep(.el-breadcrumb__inner),
 .el-breadcrumb :deep(.el-breadcrumb__separator) {
-  color: #515a6e; /* 기본 텍스트 색상 */
+  color: #515a6e;
   font-weight: normal;
 }
 .el-breadcrumb :deep(.el-breadcrumb__inner a:hover),
 .el-breadcrumb :deep(.el-breadcrumb__inner.is-link:hover) {
-  color: #409EFF; /* 링크 호버 색상 */
+  color: #409EFF;
   cursor: pointer;
 }
-/* 현재 페이지 브레드크럼 색상 */
+
 .el-breadcrumb :deep(.el-breadcrumb__item:last-child .el-breadcrumb__inner) {
-  color: #303133; /* 마지막 항목은 조금 더 진하게 */
+  color: #303133;
   font-weight: 600;
 }
-
 
 .header-right {
   display: flex;
@@ -110,15 +109,15 @@ function logout() { router.push('/login'); }
   width: 180px;
 }
 .header-search :deep(.el-input__wrapper) {
-  border-radius: 15px; /* 검색창 둥글게 */
+  border-radius: 15px;
 }
 
 .header-right .item .el-icon {
-  color: #515a6e; /* 알림 아이콘 색상 */
+  color: #515a6e;
   cursor: pointer;
 }
 .header-right .item .el-badge__content {
-  transform: translateY(-2px) translateX(5px); /* 뱃지 위치 미세 조정 */
+  transform: translateY(-2px) translateX(5px);
 }
 
 .user-info {
@@ -130,7 +129,7 @@ function logout() { router.push('/login'); }
   font-size: 14px;
 }
 .user-avatar {
-  background-color: #e4e7ed; /* 기본 아바타 배경 */
-  color: #909399; /* 기본 아바타 아이콘 색상 */
+  background-color: #e4e7ed;
+  color: #909399;
 }
 </style>
