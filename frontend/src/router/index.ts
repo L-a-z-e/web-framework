@@ -4,8 +4,8 @@ import type { RouteRecordRaw } from 'vue-router';
 const MainLayout = () => import('@/layouts/MainLayout.vue');
 const Login = () => import('@/views/auth/Login.vue');
 const Dashboard = () => import('@/views/dashboard/Dashboard.vue');
-const Menu = () => import('@/views/menu/Menu.vue');     // <<< 경로 변경
-const Sample = () => import('@/views/sample/Sample.vue');    // <<< 경로 변경
+const Menu = () => import('@/views/menu/Menu.vue');
+const Sample = () => import('@/views/sample/Sample.vue');
 
 // --- 라우트 정의 (경로도 필요시 수정) ---
 const routes: Array<RouteRecordRaw> = [
@@ -26,26 +26,22 @@ const routes: Array<RouteRecordRaw> = [
         meta: { title: '대시보드', requiresAuth: true }
       },
       {
-        // --- 경로 변경 예시 ---
-        path: '/menus', // '/fw/menus' 에서 변경
+        path: '/menus',
         name: 'MenuManagement',
-        component: Menu, // 변경된 컴포넌트 사용
+        component: Menu,
         meta: { title: '메뉴 관리', requiresAuth: true }
       },
       {
-        // --- 경로 변경 예시 ---
-        path: '/sample', // '/fw/sample' 에서 변경
+        path: '/sample',
         name: 'Sample',
-        component: Sample, // 변경된 컴포넌트 사용
+        component: Sample,
         meta: { title: '샘플 페이지', requiresAuth: true }
       }
-      // --- 앞으로 여기에 페이지 경로들을 계속 추가 ---
     ]
   },
   // { path: '/:pathMatch(.*)*', name: 'NotFound', component: NotFound },
 ];
 
-// --- 라우터 인스턴스 생성 (이하 동일) ---
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes,

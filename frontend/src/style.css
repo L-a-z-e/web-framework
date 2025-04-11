@@ -13,6 +13,30 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+html,
+body {
+  margin: 0; /* 기본 마진 제거 */
+  padding: 0; /* 기본 패딩 제거 */
+  width: 100%;
+  height: 100%;
+  overflow: hidden; /* 전체 페이지 스크롤 방지 (필요시) */
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; /* 기본 폰트 설정 (예시) */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Vue 앱이 마운트되는 요소(#app)도 전체 공간 차지하도록 설정 */
+#app {
+  width: 100%;
+  height: 100%;
+}
+
+/* (선택 사항) Element Plus 컨테이너가 부모 높이를 상속받도록 */
+/* 이 설정이 없으면 ElContainer 높이가 내용에 따라 결정될 수 있음 */
+.el-container {
+  height: 100%;
+}
+
 a {
   font-weight: 500;
   color: #646cff;
@@ -56,13 +80,6 @@ button:focus-visible {
 
 .card {
   padding: 2em;
-}
-
-#app {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
 }
 
 @media (prefers-color-scheme: light) {
