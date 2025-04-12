@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.laze.backend.menu.mapper.MenuMapper">
+
+    <select id="findAccessibleMenus" resultType="com.laze.backend.menu.dto.MenuDto" parameterType="java.util.Collection">
+        SELECT
+        MENU_ID         AS menuId,
+        MENU_NM         AS menuNm,
+        UPPER_MENU_ID   AS upperMenuId,
+        MENU_ORDR       AS menuOrdr,
+        MENU_LVL        AS menuLvl,
+        MENU_ICON       AS menuIcon
+        FROM
+        TB_FW_MENU
+        WHERE
+        USE_YN = 'Y'
+        <if test="authorities != null and !authorities.isEmpty()">
+            AND (AUTH_CD IS NULL OR AUTH_CD IN
+            <foreach item="auth" collection="authorities" open="(" separator="," close=")">
+                #{auth}
+            </foreach>
+            )
+        </if>
+        <if test="authorities == null or authorities.isEmpty()">
+            AND AUTH_CD IS NULL
+        </if>
+        ORDER BY
+        MENU_LVL ASC, MENU_ORDR ASC
+    </select>
+
+</mapper>
