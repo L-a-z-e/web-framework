@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import type { RouteRecordRaw } from 'vue-router';
+import { useAuthStore } from "@/store";
 
 const MainLayout = () => import('@/layouts/MainLayout.vue');
 const Login = () => import('@/views/auth/Login.vue');
@@ -39,7 +40,13 @@ const routes: Array<RouteRecordRaw> = [
       }
     ]
   },
-  // { path: '/:pathMatch(.*)*', name: 'NotFound', component: NotFound },
+  // 404 Not Found 페이지 (가장 마지막에 정의)
+  // {
+  //   path: '/:pathMatch(.*)*', // 정의되지 않은 모든 경로
+  //   name: 'NotFound',
+  //   component: NotFound,
+  //   meta: { title: '페이지를 찾을 수 없음' }
+  // },
 ];
 
 const router = createRouter({
@@ -52,6 +59,52 @@ const router = createRouter({
       return { top: 0 };
     }
   },
+});
+
+// --- Navigation Guard setting ---
+let isInitialCheckDone = false; // 앱 로딩 시 checkLoginStatus 중복 호출 방지 플래그
+
+router.beforeEach(async (to, from, next) => {
+  console.log(`Navigating from ${from.fullPath} to ${to.fullPath}`);
+
+  const authStore = useAuthStore();
+
+  // --- 1. 앱 초기 로딩 시 또는 새로고침 시 로그인 상태 확인 ---
+  // 아직 확인 전이고 & 로컬 스토리지 등에 상태가 남아있을 가능성이 있다면 서버에 확인
+  if (!isInitialCheckDone && !authStore.isLoggedIn && localStorage.getItem('auth')) {
+    console.log('Initial auth check needed. Calling checkLoginStatus...');
+    try {
+      await authStore.checkLoginStatus(); // 서버에 세션 유효성 및 사용자 정보 요청
+      console.log('Initial auth check completed. Logged in:', authStore.isLoggedIn);
+    } catch (error) {
+      console.error('Error during initial auth check:', error);
+    } finally {
+      isInitialCheckDone = true;
+    }
+  } else if (!isInitialCheckDone) {
+    isInitialCheckDone = true;
+  }
+
+  // --- 2. 라우트 접근 제어 ---
+  const requiresAuth = to.meta.requiresAuth; // 이동할 페이지가 인증 필요한지 확인
+  const isLoggedIn = authStore.isLoggedIn;   // 현재 로그인 상태 확인
+
+  console.log(`Route requires auth: ${requiresAuth}, User logged in: ${isLoggedIn}`);
+
+  if (requiresAuth && !isLoggedIn) {
+    // 인증 필요한 페이지인데 로그인이 안 된 경우 -> 로그인 페이지로 이동
+    console.log('Redirecting to login page.');
+    // 이동하려던 경로를 쿼리 파라미터(redirect)로 넘겨서 로그인 후 돌아올 수 있게 함 (선택적)
+    next({ name: 'Login', query: { redirect: to.fullPath } });
+  } else if (to.name === 'Login' && isLoggedIn) {
+    // 이미 로그인했는데 로그인 페이지로 가려는 경우 -> 대시보드로 이동
+    console.log('Already logged in. Redirecting to dashboard.');
+    next({ path: '/' }); // 기본 경로로 이동
+  } else {
+    // 그 외 모든 경우 (인증 불필요 페이지, 인증 필요한데 로그인 됨) -> 정상 진행
+    console.log('Proceeding with navigation.');
+    next();
+  }
 });
 
 export default router;

@@ -21,7 +21,7 @@
         </el-tooltip>
         <el-dropdown>
           <span class="user-info">
-            <el-avatar size="small" :icon="UserFilled" class="user-avatar"/> Test User <el-icon><ArrowDown /></el-icon>
+            <el-avatar size="small" :icon="UserFilled" class="user-avatar"/> {{ authStore.username }} <el-icon><ArrowDown /></el-icon>
           </span>
           <template #dropdown>
             <el-dropdown-menu>
@@ -48,8 +48,11 @@ defineProps({ isCollapsed: { type: Boolean, default: false } });
 const emit = defineEmits(['toggle-sidebar']);
 const router = useRouter();
 const route = useRoute();
+const authStore = useAuthStore();
 const currentRouteTitle = computed(() => route.meta.title || 'Page');
-function logout() { router.push('/login'); }
+function logout() {
+  authStore.logout();
+  router.push('/login'); }
 </script>
 
 <style scoped>

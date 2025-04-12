@@ -3,6 +3,15 @@
 </template>
 
 <script setup lang="ts">
+
+import {useAuthStore} from "@/store";
+import {onMounted} from "vue";
+
+const authStore = useAuthStore();
+
+onMounted(() => {
+  authStore.checkLoginStatus();
+})
 </script>
 
 <style>

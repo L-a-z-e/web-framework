@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue';
 import { defineStore } from 'pinia';
 import type {UserInfo} from "@/types/user.ts";
+import api from "@/services/api.ts";
 
 // --- !!! Backend 의 UserDetails 구현체 타입 임포트 !!! ---
 // 실제 경로와 타입 이름을 확인하고 맞게 수정해야 합니다.
@@ -27,7 +28,6 @@ export const useAuthStore = defineStore('auth', () => {
     // 권한 목록 (GrantedAuthority 객체에서 실제 권한 문자열만 추출)
     const authorities = computed(() => userInfo.value?.authorities?.map(auth => auth.authority) || []);
 
-    // 특정 권한을 가지고 있는지 확인하는 getter 예시
     function hasRole(role: string): boolean {
       // 'ROLE_' 접두사 자동 추가 또는 확인 로직 포함 가능
       const roleName = role.startsWith('ROLE_') ? role : `ROLE_${role}`;
@@ -57,28 +57,20 @@ export const useAuthStore = defineStore('auth', () => {
      * 사용자 정보를 요청하여 스토어를 초기화하는 액션.
      * @returns Promise<boolean> 로그인 상태 여부
      */
-    async function checkLoginStatus() {
+    async function checkLoginStatus(): Promise<boolean> {
       if (isLoggedIn.value) return true; // 이미 유저 정보가 있으면 체크 불필요 (선택적)
 
       isLoading.value = true;
       try {
         // TODO: 백엔드에 현재 사용자 정보를 가져오는 API 호출 ('/api/user/me' 등)
-        // 예시: const response = await api.get('/api/user/me');
-        // if (response.data.success && response.data.data) {
-        //   setUserInfo(response.data.data); // API 응답 데이터로 사용자 정보 설정
-        //   return true;
-        // } else {
-        //   // API 호출 실패 또는 사용자 정보 없음 (세션 만료 등)
-        //   await logout(); // 로그아웃 처리
-        //   return false;
-        // }
-        console.warn('checkLoginStatus(): API call not implemented yet.');
-        // 임시: 테스트를 위해 강제로 사용자 정보 설정 (실제 구현 시 제거)
-        if (localStorage.getItem('tempLoggedIn') === 'true') {
-          const tempUser: UserInfo = { empId: 'testuser', empNm: '테스트', cmpCd: 'C001', deptCd: 'D001', authorities: [{ authority: 'ROLE_USER' }] };
-          setUserInfo(tempUser);
+        // 예시:
+        const response = await api.get('/api/user/me');
+        if (response.data.success && response.data.data) {
+          setUserInfo(response.data.data); // API 응답 데이터로 사용자 정보 설정
           return true;
         } else {
+          // API 호출 실패 또는 사용자 정보 없음 (세션 만료 등)
+          await logout(); // 로그아웃 처리
           return false;
         }
       } catch (error) {
@@ -129,5 +121,5 @@ export const useAuthStore = defineStore('auth', () => {
     };
   },
 // --- (선택 사항) Pinia Persist 플러그인 설정 ---
-// { persist: true } // 브라우저 저장소(localStorage)에 상태 자동 저장/복구
+{ persist: true } // 브라우저 저장소(localStorage)에 상태 자동 저장/복구
 );

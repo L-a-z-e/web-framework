@@ -58,7 +58,6 @@ public class SecurityConfig {
                 .usernameParameter("empId")
                 .passwordParameter("password")
                 .successHandler(customAuthenticationSuccessHandler)
-//                .defaultSuccessUrl("/", true)
                 .failureUrl("/login?error=true")
                 .permitAll()
             )
