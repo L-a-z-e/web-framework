@@ -20,7 +20,7 @@ const api: AxiosInstance = axios.create({
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     // console.log('Starting Request', config);
-    // JWT 토큰 사용 시 여기서 헤더에 토큰 추가
+    // JWT 토큰 사용 시
     // const token = localStorage.getItem('accessToken');
     // if (token) {
     //   config.headers.Authorization = `Bearer ${token}`;

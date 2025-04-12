@@ -1,7 +1,7 @@
 <template>
   <el-aside :width="isCollapsed ? '64px' : '200px'" class="layout-aside">
     <div class="sidebar-logo-container">
-      <router-link to="/" class="sidebar-logo-link"> <!-- 로고 클릭 시 홈으로 이동 -->
+      <router-link to="/" class="sidebar-logo-link">
         <slot name="logo">
           <img src="@/assets/vue.svg" alt="Logo" class="sidebar-logo" v-if="!isCollapsed"> <!-- Vue 로고 사용 (예시) -->
           <img src="@/assets/vue.svg" alt="Logo" class="sidebar-logo-small" v-else>
@@ -19,20 +19,9 @@
         :collapse-transition="false"
         :default-active="activeMenu"
         router
-        @select="handleMenuSelect"
-      >
-        <!-- 메뉴 아이템 예시 -->
-        <el-sub-menu index="system-group">
-          <template #title>
-            <el-icon><Setting /></el-icon><span>시스템 관리</span>
-          </template>
-          <el-menu-item index="/menus">메뉴 관리</el-menu-item>
-          <el-menu-item index="/codes">코드 관리</el-menu-item>
-          <el-menu-item index="/users">사용자 관리</el-menu-item>
-        </el-sub-menu>
-        <el-menu-item index="/sample">
-          <el-icon><Document /></el-icon><template #title>샘플 화면</template>
-        </el-menu-item>
+        >
+<!--        @select="handleMenuSelect"-->
+        <MenuItem v-for="menu in menuStore.menuItems" :key="menu.menuId" :item="menu" />
       </el-menu>
     </el-scrollbar>
   </el-aside>
@@ -43,13 +32,16 @@
 import { defineProps, defineEmits, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { ElAside, ElScrollbar, ElMenu, ElSubMenu, ElMenuItem, ElIcon } from 'element-plus';
-import { Menu as MenuIcon, Document, Setting } from '@element-plus/icons-vue'; // 사용할 아이콘 임포트
+import { Menu as MenuIcon, Document, Setting } from '@element-plus/icons-vue';
+import {useMenuStore} from "@/store";
+import MenuItem from "@/components/MenuItem.vue"; // 사용할 아이콘 임포트
 
 defineProps({ isCollapsed: { type: Boolean, default: false } });
 const emit = defineEmits(['menu-select']);
 const route = useRoute();
+const menuStore = useMenuStore();
 const activeMenu = computed(() => route.path);
-function handleMenuSelect(index: string) { emit('menu-select', { index }); }
+// function handleMenuSelect(index: string) { emit('menu-select', { index }); }
 </script>
 
 <style scoped>
