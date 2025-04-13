@@ -1,7 +1,8 @@
 // src/store/auth.ts
 import { ref, computed } from 'vue';
+import apiClient from '@/services/api.ts';
 import { defineStore } from 'pinia';
-import type {UserInfo} from "@/types/user.ts";
+import type { UserInfo } from "@/types/user.ts";
 import api from "@/services/api.ts";
 
 // --- !!! Backend 의 UserDetails 구현체 타입 임포트 !!! ---
@@ -22,9 +23,16 @@ export const useAuthStore = defineStore('auth', () => {
     // 사용자 이름 (없으면 'Guest')
     const username = computed(() => userInfo.value?.empNm || 'Guest');
     // 사용자 ID
-    const empId = computed(() => userInfo.value?.empId || null);
+    // const empId = computed<string | null>(() => userInfo.value?.empId || null);
+    const empId = computed<string | null>(() => { // 반환 타입 명시
+      const user = userInfo.value;
+      if (user && typeof user === 'object' && 'empId' in user) { // 타입 가드
+        return user.empId;
+      }
+      return null;
+    });
     // 회사 코드
-    const cmpCd = computed(() => userInfo.value?.cmpCd || null);
+    const cmpCd = computed<string | null>(() => userInfo.value?.cmpCd || null);
     // 권한 목록 (GrantedAuthority 객체에서 실제 권한 문자열만 추출)
     const authorities = computed(() => userInfo.value?.authorities?.map(auth => auth.authority) || []);
 
@@ -52,31 +60,40 @@ export const useAuthStore = defineStore('auth', () => {
     }
 
     /**
-     * (세션 기반에서는 이 액션의 역할이 다름)
-     * 애플리케이션 시작 시 또는 페이지 새로고침 시 서버에 현재 로그인 상태(세션 유효성) 및
-     * 사용자 정보를 요청하여 스토어를 초기화하는 액션.
+     * 앱 시작/새로고침 시 서버에 현재 로그인 상태 및 사용자 정보를 요청하여 스토어 초기화.
+     * ApiResponseWrapper 사용을 전제로 함 (성공 시 response.data 에 UserInfo 포함)
      * @returns Promise<boolean> 로그인 상태 여부
      */
     async function checkLoginStatus(): Promise<boolean> {
-      if (isLoggedIn.value) return true; // 이미 유저 정보가 있으면 체크 불필요 (선택적)
-
+      // 이미 스토어에 사용자 정보가 있거나(Persist 플러그인 복원 등), 로딩 중이면 중복 실행 방지
+      if (userInfo.value || isLoading.value) {
+        console.log('Skipping auth check. Already logged in or loading.');
+        return isLoggedIn.value; // 현재 로그인 상태 반환
+      }
       isLoading.value = true;
       try {
-        // TODO: 백엔드에 현재 사용자 정보를 가져오는 API 호출 ('/api/user/me' 등)
-        // 예시:
-        const response = await api.get('/api/user/me');
-        if (response.data.success && response.data.data) {
-          setUserInfo(response.data.data); // API 응답 데이터로 사용자 정보 설정
-          return true;
+        // GET /api/user/me 호출 (Axios 제네릭으로 UserInfo 타입 명시)
+        const response = await apiClient.get<UserInfo>('/api/user/me');
+
+        // --- !!! 수정된 부분: Wrapper 적용 기준으로 응답 처리 !!! ---
+        // 성공 응답(200 OK)이고 응답 데이터(UserInfo)가 있으면 성공
+        if (response.status === 200 && response.data) {
+          setUserInfo(response.data); // 스토어에 사용자 정보 설정
+          console.log('Login status checked and user info set:', (userInfo.value as UserInfo | null)?.empId);
+          // console.log('Login status checked and user info set:', userInfo.value?.empId);
+          return true; // 로그인 상태 true 반환
         } else {
-          // API 호출 실패 또는 사용자 정보 없음 (세션 만료 등)
+          // API 호출은 성공했으나 데이터가 없는 비정상 상황 (거의 발생 안 함)
+          console.warn('checkLoginStatus: Received successful response but no user data.');
           await logout(); // 로그아웃 처리
           return false;
         }
-      } catch (error) {
-        console.error('Error checking login status:', error);
-        await logout(); // 에러 발생 시 로그아웃 처리
-        return false;
+      } catch (error: any) {
+        // API 호출 실패 (401 Unauthorized, 403 Forbidden, 네트워크 오류 등)
+        // -> 세션이 없거나 만료된 것으로 간주하고 로그아웃 처리
+        console.info('checkLoginStatus: User is not authenticated or session expired.');
+        await logout(); // 스토어 상태 초기화 및 백엔드 로그아웃 호출
+        return false; // 로그인 상태 false 반환
       } finally {
         isLoading.value = false;
       }
