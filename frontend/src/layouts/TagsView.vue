@@ -1,24 +1,33 @@
 <template>
   <div id="tags-view-container" class="tags-view-container">
-    <el-scrollbar ref="scrollContainerRef" class="tags-view-wrapper" @wheel.prevent="handleScroll">
-      <router-link
+    <!-- Element Plus Tabs 컴포넌트 사용 -->
+    <el-tabs
+      v-model="activeTab"
+      type="card"
+      class="tags-view-tabs"
+      :closable="true"
+      @tab-click="handleTabClick"
+      @tab-remove="handleTabRemove"
+    >
+      <!-- 스토어의 visitedViews 를 기반으로 탭 동적 생성 -->
+      <!-- 고정 탭은 닫기 버튼 비활성화 -->
+      <el-tab-pane
         v-for="tag in visitedViews"
         :key="tag.fullPath"
-        :ref="el => setTagRef(el, tag)"
-        :class="isActive(tag) ? 'active' : ''"
-        :to="{ path: tag.path, query: tag.query }"
-        class="tags-view-item"
-        @click.middle.prevent="!isAffix(tag) ? closeSelectedTag(tag) : ''"
-        @contextmenu.prevent="openMenu(tag, $event)"
+        :label="tag.title"
+        :name="tag.fullPath"
+        :closable="!isAffix(tag)"
       >
-        {{ tag.title }}
-        <!-- 고정되지 않은 탭에만 닫기 버튼 표시 -->
-        <el-icon v-if="!isAffix(tag)" class="el-icon-close" @click.prevent.stop="closeSelectedTag(tag)">
-          <Close />
-        </el-icon>
-      </router-link>
-    </el-scrollbar>
-    <!-- 우클릭 컨텍스트 메뉴 -->
+      <!-- 우클릭 컨텍스트 메뉴를 위해 라벨 슬롯 사용 -->
+      <template #label>
+          <span @contextmenu.prevent="openMenu(tag, $event)">
+            {{ tag.title }}
+          </span>
+      </template>
+      </el-tab-pane>
+    </el-tabs>
+
+    <!-- 우클릭 컨텍스트 메뉴 (UI는 이전과 동일) -->
     <ul v-show="visible" :style="{ left: left + 'px', top: top + 'px' }" class="contextmenu">
       <li @click="refreshSelectedTag(selectedTag)">Refresh</li>
       <li v-if="!isAffix(selectedTag)" @click="closeSelectedTag(selectedTag)">Close</li>
@@ -29,308 +38,233 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, nextTick } from 'vue';
-import { useRoute, useRouter, RouterLink } from 'vue-router';
-import { useTagsViewStore } from '@/store/modules/tagsView'; // 스토어 임포트
+import { ref, computed, watch, nextTick, onMounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { useTagsViewStore } from '@/store/modules/tagsView'; // TagsView 스토어
 import type { TagView } from '@/types/tagsView';
-import { ElScrollbar, ElIcon } from 'element-plus';
-import { Close } from '@element-plus/icons-vue';
+import { ElTabs, ElTabPane } from 'element-plus'; // ★ ElTabs, ElTabPane 임포트
+import type { TabsPaneContext } from 'element-plus'; // 타입 임포트
 
-// 스토어, 라우터, 현재 라우트 인스턴스 가져오기
+// 스토어, 라우터, 현재 라우트 인스턴스
 const store = useTagsViewStore();
 const router = useRouter();
 const route = useRoute();
 
-// 스토어 상태를 반응형으로 가져오기
+// 스토어에서 방문한 탭 목록 가져오기
 const visitedViews = computed(() => store.visitedViews);
 
-// 컨텍스트 메뉴 관련 상태
-const visible = ref(false); // 메뉴 표시 여부
-const top = ref(0);       // 메뉴 top 위치
-const left = ref(0);      // 메뉴 left 위치
-const selectedTag = ref<TagView>({}); // 우클릭된 탭 정보
+// ElTabs와 연결될 현재 활성 탭의 식별자 (fullPath 사용)
+const activeTab = ref(route.fullPath);
 
-// 스크롤 컨테이너 및 개별 탭 요소 참조
-const scrollContainerRef = ref<InstanceType<typeof ElScrollbar>>();
-const tagRefs = ref<Map<string, any>>(new Map()); // Map을 사용하여 각 탭의 DOM 요소 저장
+// --- 컨텍스트 메뉴 관련 상태 및 함수 (이전 구현과 대부분 동일) ---
+const visible = ref(false);
+const top = ref(0);
+const left = ref(0);
+const selectedTag = ref<TagView>({});
 
-/**
- * v-for 내부에서 각 router-link 요소의 참조를 설정/해제합니다.
- * @param el 참조된 요소 또는 null
- * @param tag 해당 요소에 연결된 탭 정보
- */
-const setTagRef = (el: any, tag: TagView) => {
-  if (tag.fullPath) { // fullPath가 있는 유효한 태그만 처리
-    if (el) {
-      tagRefs.value.set(tag.fullPath, el); // Map에 참조 추가
-    } else {
-      tagRefs.value.delete(tag.fullPath); // Map에서 참조 제거 (컴포넌트 언마운트 시)
-    }
-  }
-};
-
-/** 현재 라우트와 탭의 경로가 일치하는지 확인하여 활성 상태 결정 */
-const isActive = (tag: TagView): boolean => tag.path === route.path;
-
-/** 탭이 고정 탭인지 확인 (meta.affix) */
+// 탭이 고정 탭인지 확인
 const isAffix = (tag: TagView): boolean => tag.meta?.affix === true;
 
 /**
- * 활성화된 탭으로 스크롤을 이동시킵니다.
+ * ElTabs의 @tab-click 이벤트 핸들러. 탭 클릭 시 해당 경로로 라우터 이동.
+ * @param pane 클릭된 탭의 컨텍스트 정보 (TabsPaneContext)
  */
-const moveToCurrentTag = () => {
-  nextTick(() => { // DOM 업데이트 후 실행 보장
-    const currentTagEl = tagRefs.value.get(route.fullPath); // 현재 활성 탭의 DOM 요소 찾기
-    if (currentTagEl && scrollContainerRef.value) {
-      const container = scrollContainerRef.value.$el as HTMLElement;
-      const containerWidth = container.offsetWidth;
-      const scrollWrapper = scrollContainerRef.value.wrapRef; // 스크롤 가능한 내부 요소
-      if (!scrollWrapper) return;
-
-      // 스크롤 위치 계산 (개선된 방식)
-      const tagOffsetLeft = currentTagEl.offsetLeft || 0; // 요소의 왼쪽 옵셋
-      const tagWidth = currentTagEl.offsetWidth || 0;   // 요소의 너비
-      const currentScrollLeft = scrollWrapper.scrollLeft; // 현재 스크롤 위치
-
-      // 탭이 왼쪽에 가려진 경우
-      if (tagOffsetLeft < currentScrollLeft) {
-        scrollWrapper.scrollTo({ left: tagOffsetLeft, behavior: 'smooth' });
-      }
-      // 탭이 오른쪽에 가려진 경우
-      else if (tagOffsetLeft + tagWidth > currentScrollLeft + containerWidth) {
-        // 오른쪽 끝으로 스크롤 (약간의 여백 고려 가능)
-        scrollWrapper.scrollTo({ left: tagOffsetLeft + tagWidth - containerWidth, behavior: 'smooth' });
-      }
-    }
-  });
-};
-
-/**
- * 선택된 탭을 닫습니다. (스토어 액션 호출)
- * @param view 닫을 탭 정보
- */
-const closeSelectedTag = (view: TagView) => {
-  if (isAffix(view)) return; // 고정 탭은 닫지 않음
-  store.delView(view).then(() => {
-    // 닫힌 탭이 현재 활성 탭이었다면, 남은 탭 중 마지막 탭으로 이동
-    if (isActive(view)) {
-      store.toLastView(view);
-    }
-  });
-};
-
-/**
- * 컨텍스트 메뉴에서 'Close Others' 클릭 시 호출됩니다. (스토어 액션 호출)
- */
-const closeOthersTags = () => {
-  // 우클릭된 탭(selectedTag) 정보가 유효한지 확인
-  if (!selectedTag.value.fullPath) return;
-  // 선택된 탭으로 먼저 이동 (사용자 경험)
-  router.push(selectedTag.value); // 라우트 객체 직접 전달 가능
-  // 스토어 액션 호출하여 다른 탭 제거
-  store.delOthersViews(selectedTag.value).then(() => {
-    moveToCurrentTag(); // 스크롤 위치 조정
-  });
-};
-
-/**
- * 컨텍스트 메뉴에서 'Close All' 클릭 시 호출됩니다. (스토어 액션 호출)
- * @param view 현재 컨텍스트 메뉴가 열린 탭 정보 (이동 기준)
- */
-const closeAllTags = (view: TagView) => {
-  store.delAllViews().then(() => {
-    // 모든 탭 (고정 탭 제외) 제거 후 남은 탭 또는 기본 경로로 이동
-    store.toLastView(view);
-  });
-};
-
-/**
- * 탭에서 우클릭 시 컨텍스트 메뉴를 엽니다.
- * @param tag 우클릭된 탭 정보
- * @param e MouseEvent 객체
- */
-const openMenu = (tag: TagView, e: MouseEvent) => {
-  const menuMinWidth = 105; // 컨텍스트 메뉴 최소 너비
-  const container = document.getElementById('tags-view-container'); // TagsView 컨테이너 요소
-  if (!container) return;
-
-  const offsetLeft = container.getBoundingClientRect().left; // 컨테이너의 화면 왼쪽 기준 위치
-  const { clientWidth } = container;                       // 컨테이너 너비
-  const maxLeft = clientWidth - menuMinWidth;              // 메뉴가 오른쪽으로 벗어나지 않도록 최대 left 위치 계산
-
-  // 메뉴 left 위치 계산 (컨테이너 기준 + 여백)
-  let calculatedLeft = e.clientX - offsetLeft + 15; // 15px 정도 여백
-  if (calculatedLeft > maxLeft) {
-    calculatedLeft = maxLeft; // 최대 위치 제한
+const handleTabClick = (pane: TabsPaneContext) => {
+  // pane.props.name 에 우리가 ElTabPane의 :name으로 설정한 fullPath가 들어옴
+  const clickedFullPath = pane.props.name;
+  if (typeof clickedFullPath === 'string' && clickedFullPath !== route.fullPath) {
+    router.push(clickedFullPath); // 현재 경로와 다른 경우에만 이동
   }
+};
 
-  // 메뉴 top 위치 계산 (헤더 높이 등 고려하여 조정 필요)
-  let calculatedTop = e.clientY - 50; // 예: 헤더 높이 50px 가정, 실제 값으로 조정
+/**
+ * ElTabs의 @tab-remove 이벤트 핸들러. 탭 닫기 버튼 클릭 시 호출.
+ * @param targetName 닫으려는 탭의 name (fullPath)
+ */
+const handleTabRemove = (targetName: string | number) => {
+  if (typeof targetName !== 'string') return;
 
-  // 계산된 위치와 선택된 탭 정보 업데이트, 메뉴 표시
+  const targetView = visitedViews.value.find(view => view.fullPath === targetName);
+  if (targetView) {
+    store.delView(targetView).then(() => {
+      // 닫힌 탭이 현재 활성 탭이었다면, 마지막 탭 또는 기본 경로로 이동
+      if (activeTab.value === targetName) {
+        store.toLastView(targetView);
+      }
+    });
+  }
+};
+
+// 컨텍스트 메뉴 열기 (위치 계산 로직은 이전과 동일)
+const openMenu = (tag: TagView, e: MouseEvent) => {
+  const menuMinWidth = 105;
+  const container = document.getElementById('tags-view-container');
+  if (!container) return;
+  // 클릭된 span 요소의 위치를 기준으로 계산
+  const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+  const containerRect = container.getBoundingClientRect();
+
+  let calculatedLeft = rect.left - containerRect.left + 5; // 라벨 시작점 기준
+  const maxLeft = container.clientWidth - menuMinWidth;
+  if (calculatedLeft > maxLeft) calculatedLeft = maxLeft;
+
+  let calculatedTop = rect.bottom - containerRect.top + 5; // 라벨 하단 기준
+
   left.value = calculatedLeft;
   top.value = calculatedTop;
   visible.value = true;
   selectedTag.value = tag;
 };
 
-/** 컨텍스트 메뉴를 닫습니다. */
-const closeMenu = () => {
-  visible.value = false;
-};
+// 컨텍스트 메뉴 닫기
+const closeMenu = () => { visible.value = false; };
 
-/**
- * 컨텍스트 메뉴에서 'Refresh' 클릭 시 호출됩니다.
- * 선택된 탭의 컴포넌트를 새로고침(재렌더링)합니다.
- * @param view 새로고침할 탭 정보
- */
+// 선택된 탭 새로고침 (keep-alive 캐시 제거 후 동일 경로 replace)
 const refreshSelectedTag = (view: TagView) => {
-  // 1. 스토어에서 해당 뷰의 캐시를 제거합니다. (keep-alive 캐시 해제)
-  store.delCachedView(view);
-  const { fullPath } = view; // 현재 탭의 전체 경로 저장
-
-  // 2. nextTick을 사용하여 DOM 업데이트 주기를 기다린 후 실행합니다.
+  if (!view.fullPath) return;
+  store.delCachedView(view); // 스토어에서 캐시 제거 액션 호출
   nextTick(() => {
-    // 3. 현재 경로와 동일한 경로로 replace 합니다.
-    // Vue Router는 기본적으로 같은 경로로 이동 시 컴포넌트를 재사용하지만,
-    // keep-alive 캐시가 제거되었으므로 컴포넌트가 재마운트되어 새로고침 효과가 나타납니다.
-    // (만약 Redirect 뷰 방식을 사용한다면 해당 코드로 대체)
-    router.replace({ path: fullPath }).catch(err => {
-      // 동일 경로 이동 시 발생하는 NavigationDuplicated 에러는 무시해도 괜찮음
-      console.warn('Router replace error (likely NavigationDuplicated):', err);
-    });
+    // 현재 활성 탭이면 replace로, 아니면 push 후 다시 원래 탭으로?
+    // 일단 replace로 시도 (같은 경로 이동은 에러 발생 가능하나 무시)
+    router.replace({ path: view.fullPath }).catch(() => {});
   });
 };
 
+// 컨텍스트 메뉴: Close (handleTabRemove 재사용)
+const closeSelectedTag = (view: TagView) => {
+  handleTabRemove(view.fullPath || '');
+};
 
-/**
- * 마우스 휠 이벤트를 처리하여 가로 스크롤을 수행합니다.
- * @param e WheelEvent 객체
- */
-const handleScroll = (e: WheelEvent) => {
-  const eventDelta = e.deltaY || e.detail; // 휠 이동량 (세로 스크롤 기준)
-  const scrollWrapper = scrollContainerRef.value?.wrapRef; // 스크롤 가능한 내부 요소
-  if (scrollWrapper) {
-    // 세로 휠 이동량을 가로 스크롤 이동량으로 변환하여 적용
-    scrollWrapper.scrollLeft += eventDelta / 4; // 스크롤 속도 조절 가능
-  }
+// 컨텍스트 메뉴: Close Others
+const closeOthersTags = () => {
+  if (!selectedTag.value.fullPath) return;
+  router.push(selectedTag.value); // 선택된 탭으로 먼저 이동
+  store.delOthersViews(selectedTag.value); // 스토어 액션 직접 호출
+};
+
+// 컨텍스트 메뉴: Close All
+const closeAllTags = (view: TagView) => {
+  store.delAllViews().then(() => {
+    store.toLastView(view); // 남은 탭(고정 탭) 또는 기본 경로로 이동
+  });
 };
 
 // --- Watchers ---
 
-// 현재 라우트 변경을 감지하여 활성 탭으로 스크롤 이동
-watch(route, () => {
-  // addTags(); // 라우트 변경 시 탭 추가는 현재 afterEach 가드에서 처리 중
-  moveToCurrentTag(); // 스크롤 위치만 조정
+// 라우트 변경 감지 -> ElTabs의 활성 탭 업데이트
+watch(() => route.fullPath, (newFullPath) => {
+  activeTab.value = newFullPath;
+  // ElTabs는 일반적으로 활성 탭을 자동으로 보이게 스크롤하지만,
+  // 필요하다면 여기서 ElTabs 인스턴스에 접근하여 수동 스크롤 로직 추가 가능
 });
 
-// 컨텍스트 메뉴 표시 상태 변경 감지 (외부 클릭 시 닫기 위함)
+// 컨텍스트 메뉴 외부 클릭 시 닫기 (이전과 동일)
 watch(visible, (value) => {
   if (value) {
-    // 메뉴가 보일 때 body에 클릭 이벤트 리스너 추가
     document.body.addEventListener('click', closeMenu);
   } else {
-    // 메뉴가 사라질 때 리스너 제거
     document.body.removeEventListener('click', closeMenu);
   }
 });
 
-// --- Lifecycle Hooks ---
+// 스토어의 탭 목록 변경 시, 현재 활성 탭이 유효하지 않으면 이동 (안정성)
+watch(visitedViews, (newViews) => {
+  if (newViews.length > 0 && !newViews.some(view => view.fullPath === activeTab.value)) {
+    store.toLastView(); // 마지막 유효 탭으로 이동
+  } else if (newViews.length === 0 && route.path !== '/dashboard') { // 탭이 모두 닫혔고 대시보드가 아니면
+    router.push('/dashboard'); // 예시: 대시보드로 이동
+  }
+}, { deep: true });
 
-// 컴포넌트 마운트 시 초기화 작업 수행
+
+// --- Lifecycle Hooks ---
 onMounted(() => {
-  // initTags(); // 초기 고정 탭 추가 로직 (필요시 활성화, 스토어/가드와 연계)
-  moveToCurrentTag(); // 현재 활성 탭으로 스크롤 이동
+  // 컴포넌트 마운트 시 현재 라우트 경로로 activeTab 초기화
+  activeTab.value = route.fullPath;
 });
 
 </script>
 
 <style scoped>
+/* TagsView 컨테이너 기본 스타일 */
 .tags-view-container {
-  height: 34px;
-  width: 100%;
-  background: #fff;
-  border-bottom: 1px solid #d8dce5;
+  height: 40px; /* ElTabs 높이에 맞춰 조정 (기본값 근사치) */
+  background-color: #fff;
+  padding: 0 10px; /* 좌우 여백 */
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, .12), 0 0 3px 0 rgba(0, 0, 0, .04);
+  position: relative; /* 컨텍스트 메뉴 포지셔닝 기준 */
+  /* border-bottom: 1px solid var(--el-border-color-light); */ /* 필요시 하단 구분선 */
 }
 
-.tags-view-container .tags-view-wrapper {
-  height: 100%;
-  position: relative;
+/* ElTabs 컴포넌트 스타일 조정 */
+.tags-view-tabs {
+  height: 100%; /* 컨테이너 높이 채우기 */
 }
 
-.tags-view-container .tags-view-wrapper .tags-view-item {
-  display: inline-block;
-  position: relative;
-  cursor: pointer;
-  height: 26px;
-  line-height: 26px;
-  border: 1px solid #d8dce5;
-  color: #495060;
-  background: #fff;
-  padding: 0 8px;
-  font-size: 12px;
-  margin-left: 5px;
-  margin-top: 4px;
+/* Tabs 헤더 영역 (탭들이 있는 곳) */
+:deep(.el-tabs__header) {
+  margin: 0; /* 기본 마진 제거 */
+  border-bottom: none; /* 기본 하단 테두리 제거 */
+  height: 100%; /* 높이 100% */
+  display: flex;
+  align-items: center; /* 탭들 세로 중앙 정렬 */
 }
 
-.tags-view-container .tags-view-wrapper .tags-view-item:first-of-type {
-  margin-left: 15px;
+/* 네비게이션 스크롤 버튼 (탭 많을 때) */
+:deep(.el-tabs__nav-prev),
+:deep(.el-tabs__nav-next) {
+  line-height: 40px; /* 컨테이너 높이에 맞춤 */
+  color: #5a5e66;
+}
+:deep(.el-tabs__nav-prev:hover),
+:deep(.el-tabs__nav-next:hover) {
+  color: var(--el-color-primary);
 }
 
-.tags-view-container .tags-view-wrapper .tags-view-item:last-of-type {
-  margin-right: 15px;
+
+/* 개별 탭 아이템 */
+:deep(.el-tabs__item) {
+  height: 30px; /* 탭 높이 조정 (컨테이너 높이보다 작게) */
+  line-height: 30px; /* 라인 높이 맞춤 */
+  font-size: 13px; /* 폰트 크기 */
+  margin-right: 5px; /* 탭 간 간격 */
+  border: 1px solid var(--el-border-color-light) !important; /* 테두리 명시 */
+  border-radius: 4px; /* 모서리 둥글게 */
+  padding: 0 15px !important; /* 내부 좌우 패딩 조정 */
+  color: #5a5e66; /* 기본 텍스트 색상 */
+  background-color: #ffffff; /* 기본 배경색 */
+  transition: color 0.3s, background-color 0.3s; /* 부드러운 전환 효과 */
+}
+/* 탭 호버 스타일 */
+:deep(.el-tabs__item:hover) {
+  color: var(--el-color-primary);
+  border-color: var(--el-color-primary-light-7);
 }
 
 /* 활성 탭 스타일 */
-.tags-view-container .tags-view-wrapper .tags-view-item.active {
-  background-color: #42b983; /* 테마 색상에 맞게 수정 */
-  color: #fff;
-  border-color: #42b983;
+:deep(.el-tabs__item.is-active) {
+  color: var(--el-color-primary); /* 활성 탭 텍스트 색상 */
+  border-color: var(--el-color-primary) !important; /* 활성 탭 테두리 색상 */
+  background-color: var(--el-color-primary-light-9); /* 활성 탭 배경색 (연하게) */
+  /* box-shadow: 0 0 3px rgba(0, 0, 0, 0.1); */ /* 입체감 효과 (선택적) */
 }
 
-/* 활성 탭 점 표시 */
-.tags-view-container .tags-view-wrapper .tags-view-item.active::before {
-  content: '';
-  background: #fff;
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  position: relative;
-  margin-right: 2px;
+/* 탭 닫기 버튼 */
+:deep(.el-tabs__item .el-icon) { /* ElIcon 컴포넌트 타겟 */
+  margin-left: 8px; /* 텍스트와의 간격 */
+  vertical-align: middle; /* 세로 중앙 정렬 */
+  border-radius: 50%; /* 원형 배경 */
+  padding: 1px; /* 클릭 영역 확보 */
+  transition: all 0.3s cubic-bezier(.645,.045,.355,1);
+}
+/* 닫기 버튼 호버 시 */
+:deep(.el-tabs__item .el-icon:hover) {
+  background-color: var(--el-color-danger); /* 호버 배경색 (빨강) */
+  color: white; /* 호버 아이콘 색 (흰색) */
 }
 
-/* 닫기 아이콘 스타일 */
-.tags-view-container .tags-view-wrapper .tags-view-item .el-icon-close {
-  width: 16px;
-  height: 16px;
-  vertical-align: 2px;
-  border-radius: 50%;
-  text-align: center;
-  transition: all .3s cubic-bezier(.645, .045, .355, 1);
-  transform-origin: 100% 50%;
-  margin-left: 5px;
-}
-
-/* 닫기 아이콘 내부 (크기 조정) */
-.tags-view-container .tags-view-wrapper .tags-view-item .el-icon-close::before {
-  /* ::before 선택자는 el-icon 내부 svg에 직접 적용되지 않을 수 있음. */
-  /* 필요시 아이콘 크기 조정은 font-size 등으로 시도 */
-  /* transform: scale(.6); */
-  /* display: inline-block; */
-  /* vertical-align: -3px; */
-}
-
-/* 닫기 아이콘 호버 */
-.tags-view-container .tags-view-wrapper .tags-view-item .el-icon-close:hover {
-  background-color: #b4bccc;
-  color: #fff;
-}
-
-
-/* 컨텍스트 메뉴 스타일 */
-.tags-view-container .contextmenu {
+/* 컨텍스트 메뉴 스타일 (이전과 동일) */
+.contextmenu {
   margin: 0;
   background: #fff;
   z-index: 3000;
@@ -343,14 +277,12 @@ onMounted(() => {
   color: #333;
   box-shadow: 2px 2px 3px 0 rgba(0, 0, 0, .3);
 }
-
-.tags-view-container .contextmenu li {
+.contextmenu li {
   margin: 0;
   padding: 7px 16px;
   cursor: pointer;
 }
-
-.tags-view-container .contextmenu li:hover {
+.contextmenu li:hover {
   background: #eee;
 }
 </style>
