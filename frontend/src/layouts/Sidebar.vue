@@ -18,9 +18,9 @@
         active-text-color="#409EFF"
         :collapse-transition="false"
         :default-active="activeMenu"
+        @select="handleMenuSelect"
         router
         >
-<!--        @select="handleMenuSelect"-->
         <MenuItem v-for="menu in menuStore.menuItems" :key="menu.menuId" :item="menu" />
       </el-menu>
     </el-scrollbar>
@@ -30,18 +30,41 @@
 <script setup lang="ts">
 // --- Script 부분은 이전 답변과 동일하게 유지 ---
 import { defineProps, defineEmits, computed } from 'vue';
-import { useRoute } from 'vue-router';
+import {useRoute, useRouter} from 'vue-router';
 import { ElAside, ElScrollbar, ElMenu, ElSubMenu, ElMenuItem, ElIcon } from 'element-plus';
 import { Menu as MenuIcon, Document, Setting } from '@element-plus/icons-vue';
 import {useMenuStore} from "@/store";
 import MenuItem from "@/components/MenuItem.vue"; // 사용할 아이콘 임포트
 
 defineProps({ isCollapsed: { type: Boolean, default: false } });
-const emit = defineEmits(['menu-select']);
+// const emit = defineEmits(['menu-select']);
 const route = useRoute();
+const router = useRouter(); // ★ router 인스턴스 가져오기
 const menuStore = useMenuStore();
-const activeMenu = computed(() => route.path);
-// function handleMenuSelect(index: string) { emit('menu-select', { index }); }
+const activeMenu = computed(() => route.fullPath);
+function handleMenuSelect(index: string) {
+  // index MenuItem.vue 에서 :index="item.menuId" 로 설정된 값
+
+  // 1. 네비게이션 대상이 아닌 ID 형식인지 확인 (예: '#'으로 시작)
+  if (!index || index.startsWith('#')) {
+    console.log(`Navigation skipped for non-navigable menu index: ${index}`);
+    return; // 네비게이션 수행 안 함
+  }
+
+  // 2. (선택적 강화) 해당 메뉴 ID에 대한 라우트가 실제로 존재하는지 확인
+  //    라우트 이름(name)이 메뉴 ID(index)와 동일하다고 가정합니다.
+  if (router.hasRoute(index)) {
+    console.log(`Navigating to route name: ${index}`);
+    // 라우트 이름으로 이동하는 것이 더 안전할 수 있습니다.
+    router.push({ name: index });
+    // 또는 경로로 직접 이동해야 한다면:
+    // router.push('/' + index); // 경로 구조에 맞게 조정
+  } else {
+    // 정의되지 않은 라우트로의 이동 시도 방지
+    console.warn(`Route with name '${index}' not found. Navigation skipped.`);
+  }
+
+}
 </script>
 
 <style scoped>

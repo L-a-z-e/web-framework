@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import type { RouteRecordRaw } from 'vue-router';
-import {useAuthStore, useMenuStore} from "@/store";
+import {useAuthStore, useMenuStore, useTagsViewStore} from "@/store";
 import type {MenuInfo} from "@/types/menu.ts";
 
 const MainLayout = () => import('@/layouts/MainLayout.vue');
@@ -29,7 +29,14 @@ const routes: Array<RouteRecordRaw> = [
         path: 'dashboard', // '/dashboard' 로 접근
         name: 'Dashboard',
         component: Dashboard,
-        meta: { title: '대시보드', keepAlive: true } // 예시: 대시보드는 캐시
+        meta: {
+          title: 'Dashboard',
+          icon: 'House',
+          requiresAuth: true,
+          affix: true,
+          noCache: false,
+        }
+
       },
     ]
   },
@@ -75,10 +82,11 @@ function createRoute(menu: MenuInfo): RouteRecordRaw | null {
       name: menuId, // 라우트 이름은 menuId 그대로 사용
       component: viewModules[componentPath], // 찾은 컴포넌트 로더 함수 지정
       meta: {
-        title: menu.menuNm, // 메뉴 이름
-        keepAlive: true,   // 기본적으로 캐시
-        icon: menu.menuIcon, // 메뉴 아이콘
-        requiresAuth: true  // 기본적으로 인증 필요
+        title: menu.menuNm,
+        icon: menu.menuIcon,
+        requiresAuth: true,
+        affix: false,
+        noCache: false,
       }
     };
   } else {
@@ -215,6 +223,15 @@ router.beforeEach(async (to, from, next) => {
       console.log('Proceeding with navigation.');
       next(); // 정상 진행
     }
+  }
+});
+
+router.afterEach((to) => {
+  // 네비게이션 성공 후 실행
+  if (to.name && !to.meta?.hidden) { // 이름이 있고 숨김 처리되지 않은 라우트만 처리
+    // 스토어 인스턴스 가져오기 (afterEach는 setup 컨텍스트 외부)
+    const tagsViewStore = useTagsViewStore();
+    tagsViewStore.addView(to); // 현재 방문한 뷰를 스토어에 추가
   }
 });
 
