@@ -96,20 +96,22 @@ function addDynamicRoutes(menuItems: MenuInfo[]) {
     return;
   }
 
-  console.log('Adding dynamic routes based on fetched menu items...');
+  console.log('Adding dynamic routes...');
 
   function addRoutesRecursive(menuItem: MenuInfo) {
     // 1. 현재 메뉴 항목에 대한 라우트 생성 시도 (페이지 없는 그룹 메뉴('#') 등은 createRoute 에서 null 반환)
-    const route = createRoute(menuItem);
-
+    const hasPage = menuItem.menuId && !menuItem.menuId.startsWith('#') && (!menuItem.children || menuItem.children.length === 0);
     // 2. 유효한 라우트 객체가 생성되었으면 라우터에 추가
-    if (route) {
-      try {
-        router.addRoute('MainLayout', route);
-        console.log(`Successfully added route: ${route.path} (name: ${String(route.name)})`);
-      } catch (error) {
-        // 라우트 추가 중 에러 발생 시 (예: 이름 중복) 로그 기록
-        console.error(`Failed to add route for ${String(route.name) || route.path}:`, error);
+    if (hasPage) {
+      const route = createRoute(menuItem);
+      if (route) {
+        try {
+          router.addRoute('MainLayout', route);
+          console.log(`Successfully added route: ${route.path} (name: ${String(route.name)})`);
+        } catch (error) {
+          // 라우트 추가 중 에러 발생 시 (예: 이름 중복) 로그 기록
+          console.error(`Failed to add route for ${String(route.name) || route.path}:`, error);
+        }
       }
     }
 
@@ -169,27 +171,25 @@ router.beforeEach(async (to, from, next) => {
   const isLoggedIn = authStore.isLoggedIn;   // 현재 로그인 상태 확인
 
   if (isLoggedIn && !hasAddedRoutes) {
-    // 메뉴 데이터가 없으면 먼저 로드
-    if (menuStore.menuItems.length === 0 && !menuStore.isLoading) {
-      console.log('Fetching menus before adding routes...');
-      try {
+    console.log('User logged in, attempting to add dynamic routes...');
+    try {
+      if (menuStore.menuItems.length === 0 && !menuStore.isLoading) {
         await menuStore.fetchMenus();
-        console.log('Menus fetched.');
-      } catch (error) {
-        console.error('Failed to fetch menus:', error);
-        // 메뉴 로딩 실패 시 처리 (예: 에러 페이지 이동 또는 next(false) 등)
-        next(false); // 네비게이션 중단 (선택적)
-        return;
       }
-    }
-    // 메뉴 데이터 로드 후 라우트 추가
-    addDynamicRoutes(menuStore.menuItems);
+      addDynamicRoutes(menuStore.menuItems);
 
-    // --- !!! 중요: 라우트 추가 후 목표 경로로 다시 네비게이션 시도 !!! ---
-    // addRoute 가 비동기로 동작할 수 있으므로 next(to) 로 리다이렉션
-    console.log(`Dynamic routes added. Redirecting to original destination: ${to.fullPath}`);
-    next({ ...to, replace: true }); // 현재 히스토리를 대체하여 뒤로가기 시 문제 방지
-    return; // 현재 가드 실행 종료
+      // --- 라우트 추가 후 목표 경로로 다시 네비게이션 시도 ---
+      console.log(`Routes added (attempted). Retrying navigation to: ${to.fullPath}`);
+      next({ ...to, replace: true });
+      return; // 현재 가드 종료
+
+    } catch (error) {
+      console.error('Error during menu fetch or route add:', error);
+      // 에러 발생 시 처리 (예: 로그인 페이지로)
+      hasAddedRoutes = false; // 실패했으므로 다시 시도 가능하게
+      next({ name: 'Login' });
+      return;
+    }
   }
 
   const requiresAuth = to.meta.requiresAuth !== false; // 인증 필요 여부 확인
