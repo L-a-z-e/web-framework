@@ -5,11 +5,6 @@ import { defineStore } from 'pinia';
 import type { UserInfo } from "@/types/user.ts";
 import api from "@/services/api.ts";
 
-// --- !!! Backend 의 UserDetails 구현체 타입 임포트 !!! ---
-// 실제 경로와 타입 이름을 확인하고 맞게 수정해야 합니다.
-// 예시: import type { CustomUserDetails } from '@/types/user';
-// 만약 타입을 공유하기 어렵다면, 필요한 필드만 포함하는 인터페이스를 frontend 에서 정의해도 됩니다.
-
 export const useAuthStore = defineStore('auth', () => {
     // === State ===
     // 로그인한 사용자 정보 (세션 유효 시 여기에 정보 저장)
@@ -23,14 +18,14 @@ export const useAuthStore = defineStore('auth', () => {
     // 사용자 이름 (없으면 'Guest')
     const username = computed(() => userInfo.value?.empNm || 'Guest');
     // 사용자 ID
-    // const empId = computed<string | null>(() => userInfo.value?.empId || null);
-    const empId = computed<string | null>(() => { // 반환 타입 명시
-      const user = userInfo.value;
-      if (user && typeof user === 'object' && 'empId' in user) { // 타입 가드
-        return user.empId;
-      }
-      return null;
-    });
+    const empId = computed<string | null>(() => userInfo.value?.empId || null);
+    // const empId = computed<string | null>(() => { // 반환 타입 명시
+    //   const user = userInfo.value;
+    //   if (user && typeof user === 'object' && 'empId' in user) { // 타입 가드
+    //     return user.empId;
+    //   }
+    //   return null;
+    // });
     // 회사 코드
     const cmpCd = computed<string | null>(() => userInfo.value?.cmpCd || null);
     // 권한 목록 (GrantedAuthority 객체에서 실제 권한 문자열만 추출)
@@ -80,7 +75,6 @@ export const useAuthStore = defineStore('auth', () => {
         if (response.status === 200 && response.data) {
           setUserInfo(response.data); // 스토어에 사용자 정보 설정
           console.log('Login status checked and user info set:', (userInfo.value as UserInfo | null)?.empId);
-          // console.log('Login status checked and user info set:', userInfo.value?.empId);
           return true; // 로그인 상태 true 반환
         } else {
           // API 호출은 성공했으나 데이터가 없는 비정상 상황 (거의 발생 안 함)

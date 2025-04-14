@@ -5,5 +5,9 @@ export interface MenuInfo {
   menuOrdr: number;
   menuLvl: number;
   menuIcon?: string | null;
+  jobDvcd: string;
+  authCd: string;
+  useYn: string;
+  rmk?: string | null;
   children?: MenuInfo[] | null;
 }
