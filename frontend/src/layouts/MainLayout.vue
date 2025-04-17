@@ -66,7 +66,9 @@ function toggleSidebar() {
   overflow-y: auto;
 }
 
-.main-content-wrapper { }
+.main-content-wrapper {
+  background-color: #ffffff;
+}
 
 .layout-footer {
   height: 30px;

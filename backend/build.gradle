@@ -1,33 +1,30 @@
 plugins {
-    id 'org.springframework.boot' // 버전은 루트에서 관리됨
-    // java, io.spring.dependency-management는 루트에서 적용됨 (삭제)
+    id 'org.springframework.boot' // 루트에서 버전관리
 }
 
 // group, version, java toolchain, repositories 삭제 (루트에서 상속)
 
 dependencies {
+
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.4' // 버전은 BOM에서 관리될 수 있음
-    developmentOnly 'org.springframework.boot:spring-boot-devtools'
     implementation 'org.springframework.boot:spring-boot-starter-security'
-    implementation 'org.springframework.boot:spring-boot-starter-validation'
-    testImplementation 'org.springframework.security:spring-security-test'
-    implementation 'org.springframework.data:spring-data-commons'
-    implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0"
+    implementation 'org.springframework.data:spring-data-commons' // ✅ 다른 스타터에 의해 포함되는지 확인 > 미포함됨 확인
+    implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.4' // ✅ BOM에서 버전 관리 안하므로 버전 명시
+    implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0" // ✅ BOM에서 버전 관리 안하므로 버전 명시
+//    implementation 'org.mapstruct:mapstruct' // ☑️ root에서 이미 버전관리 중이므로 제거 적절한지 확인
 
-    // DB 드라이버 (MariaDB 사용 시 유지)
-    // implementation -> runtimeOnly 변경 고려
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+
+    testImplementation 'org.springframework.security:spring-security-test'
+
     runtimeOnly 'org.mariadb.jdbc:mariadb-java-client'
 
     // 공통 모듈 의존성 추가 (libs 모듈 생성 후)
-//    implementation project(':libs:com.laze.common-dto')
+//    implementation project(':libs:com.laze.common-core')
 //    implementation project(':libs:com.laze.common-util')
 
-    // MapStruct (필요시 추가)
-    implementation 'org.mapstruct:mapstruct'
-    annotationProcessor 'org.mapstruct:mapstruct-processor'
-
-    testImplementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter-test:3.0.4'
+//    annotationProcessor 'org.mapstruct:mapstruct-processor' // ☑️ root에서 이미 버전관리 중이므로 제거 적절한지 확인
+    testImplementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter-test:3.0.4' // ✅ BOM에서 버전 관리 안하므로 버전 명시
 }

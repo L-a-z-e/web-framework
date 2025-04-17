@@ -1,37 +1,36 @@
 plugins {
-    id 'org.springframework.boot' // Spring Boot 플러그인 적용
-    id 'java' // Java 플러그인 (IDE가 자동으로 추가했을 수 있음)
+    id 'org.springframework.boot' // Spring Boot 플러그인 적용 버전은 root 에서 관리
+//    id 'java' // ☑️ root 에서 plugin 관리 중인지 확인
 }
 
-repositories {
-    mavenCentral()
-}
+// ☑️ root에서 repositories 적용 문제여부만 확인
+//repositories {
+//    mavenCentral()
+//}
 
 dependencies {
-    // === Spring Batch 필수 의존성 ===
     implementation 'org.springframework.boot:spring-boot-starter-batch'
-
-    // === DB 접속 및 JDBC 관련 ===
     implementation 'org.springframework.boot:spring-boot-starter-jdbc'
     runtimeOnly 'org.mariadb.jdbc:mariadb-java-client'
-    // === 기타 필요한 의존성 ===
-    compileOnly 'org.projectlombok:lombok'
-    annotationProcessor 'org.projectlombok:lombok'
+
+//    compileOnly 'org.projectlombok:lombok' // ☑️ root 에서 이미 관리중
+//    annotationProcessor 'org.projectlombok:lombok' // ☑️ root 에서 이미 관리중
 
     // === 공통 모듈 의존성 (필요시) ===
-    // implementation project(':libs:com.laze.common-dto')
+    // implementation project(':libs:com.laze.common-core')
     // implementation project(':libs:com.laze.common-util')
 
     // === 테스트 관련 ===
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+//    testImplementation 'org.springframework.boot:spring-boot-starter-test' // ☑️ root 에서 이미 관리중
     testImplementation 'org.springframework.batch:spring-batch-test'
-    testImplementation platform('org.junit:junit-bom:5.10.0')
-    testImplementation 'org.junit.jupiter:junit-jupiter'
+//    testImplementation platform('org.junit:junit-bom:5.10.0') // ☑️ 버전 충돌 가능성 있으므로 제거대상 고려
+//    testImplementation 'org.junit.jupiter:junit-jupiter' // ☑️ spring-boot-starter-test 에서 자동으로 포함
 }
 
-test {
-    useJUnitPlatform()
-}
+// ☑️ root 에서 이미 관리함
+//test {
+//    useJUnitPlatform()
+//}
 
 // 부팅 가능한 JAR 생성 설정
 bootJar { enabled = true }

@@ -165,7 +165,7 @@ defineExpose({
 <style scoped>
 /* 스타일은 이전과 유사하게 유지, 필요시 조정 */
 .search-form {
-  background-color: #f7f8fa;
+  background-color: #ffffff;
   padding: 15px 20px 0px 20px; /* 아래 패딩 제거하여 버튼과 간격 조정 */
   border-radius: 4px;
   margin-bottom: 15px;

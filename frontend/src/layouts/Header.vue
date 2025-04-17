@@ -57,7 +57,7 @@ function logout() {
 
 <style scoped>
 .layout-header {
-  background-color: #fff;
+  background-color: #ffffff;
   display: flex;
   justify-content: space-between;
   align-items: center;
