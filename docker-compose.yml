@@ -1,0 +1,91 @@
+services:
+  # --- Backend Service ---
+  backend:
+    build:
+      context: . # 프로젝트 루트 기준
+      dockerfile: backend/Dockerfile
+    container_name: backend
+    ports:
+      - "9001:9001" # 호스트 포트 : 컨테이너 포트
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-local}
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: ${SPRING_DATASOURCE_DRIVER_CLASS_NAME}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - web-framework-network
+
+  # --- Frontend Service ---
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: frontend
+    ports:
+      - "9000:9000"
+    environment:
+      - NGINX_PROXY_PASS=http://backend:9001
+      - VITE_API_URL=${VITE_API_URL:-http://localhost:9001}
+    depends_on:
+      - backend
+    networks:
+      - web-framework-network
+
+  # --- Batch Service ---
+  batch:
+    build:
+      context: .
+      dockerfile: batch/Dockerfile
+    container_name: batch
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-local}
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: ${SPRING_DATASOURCE_DRIVER_CLASS_NAME}
+      JOB_NAME: ${JOB_NAME}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - web-framework-network
+
+  db: # 서비스 이름 (Backend/Batch 에서 호스트명으로 사용)
+    image: mariadb:11.7.2 # 지정된 버전 사용
+    container_name: docker-db
+    profiles: ["database"] # "database" 프로파일에 할당
+    ports:
+      - "3307:3306" # 호스트 포트 : 컨테이너 포트
+    environment:
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+      MARIADB_DATABASE: ${MARIADB_DATABASE}
+      MARIADB_USER: ${MARIADB_USER}
+      MARIADB_PASSWORD: ${MARIADB_PASSWORD}
+    volumes:
+      - mariadb_data:/var/lib/mysql
+#      - ./db/init:/docker-entrypoint-initdb.d # 초기화 스크립트 필요시
+    networks:
+      - web-framework-network
+    command: # Character set, Timezone 설정
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-time-zone=Asia/Seoul
+    healthcheck: # 서비스 시작 및 의존성 확인용
+      test: ["CMD", "mariadb-admin", "ping", "-h", "localhost", "-uroot", "-p${MARIADB_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s # 컨테이너 시작 후 healthcheck 시작까지 대기 시간
+
+# --- 볼륨 정의 ---
+volumes:
+  mariadb_data: # DB 데이터 저장용 볼륨
+
+# --- 네트워크 정의 ---
+networks:
+  web-framework-network:
+    driver: bridge # 기본 브릿지 네트워크 사용

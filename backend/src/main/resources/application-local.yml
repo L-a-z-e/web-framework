@@ -1,11 +1,33 @@
 spring:
+  # --- Datasource Configuration (Values from .env file) ---
   datasource:
-    url: ${SPRING_DATASOURCE_URL} # 기본값: 로컬 설치 DB 예시
-    username: ${SPRING_DATASOURCE_USERNAME} # 기본값: 로컬 설치 DB 사용자 예시
-    password: ${SPRING_DATASOURCE_PASSWORD} # !!! 비밀번호는 환경 변수로 주입 필수 (기본값 없음) !!!
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
     driver-class-name: ${SPRING_DATASOURCE_DRIVER_CLASS_NAME}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000 # 30 seconds
+      idle-timeout: 600000 # 10 minutes
+
+  # --- Spring Boot DevTools (로컬 개발 시 유용) ---
+  devtools:
+    livereload:
+      enabled: true # LiveReload 활성화 (Frontend 연동 시 유용)
+    restart:
+      enabled: true # 코드 변경 시 자동 재시작 활성화
+
+# --- 로깅 레벨 ---
 logging:
   level:
     com.laze.backend: DEBUG
     org.mybatis: TRACE
-#    org.springframework.security: TRACE
+    # Spring Security 상세 로그 (필요시 주석 해제)
+    # org.springframework.security: DEBUG
+
+# --- Springdoc (Swagger UI) Local 환경 설정 ---
+#springdoc:
+#  servers:
+#    - url: http://localhost:9001 # 로컬에서 접속하는 URL
+#      description: Local Development Server

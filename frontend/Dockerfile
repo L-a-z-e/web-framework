@@ -34,7 +34,7 @@ COPY frontend/nginx.conf /etc/nginx/conf.d/
 COPY --from=builder /web-framework/frontend/dist /usr/share/nginx/html
 
 # --- 포트 노출 ---
-EXPOSE 9001
+EXPOSE 9000
 
 # --- Nginx 실행 ---
 # foreground에서 실행 (-g daemon off;)하여 Docker 컨테이너가 종료되지 않도록 함
