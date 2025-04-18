@@ -2,8 +2,6 @@ plugins {
     id 'org.springframework.boot' // 루트에서 버전관리
 }
 
-// group, version, java toolchain, repositories 삭제 (루트에서 상속)
-
 dependencies {
 
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
@@ -14,6 +12,7 @@ dependencies {
     implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.4' // ✅ BOM에서 버전 관리 안하므로 버전 명시
     implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0" // ✅ BOM에서 버전 관리 안하므로 버전 명시
 //    implementation 'org.mapstruct:mapstruct' // ☑️ root에서 이미 버전관리 중이므로 제거 적절한지 확인
+    implementation "net.logstash.logback:logstash-logback-encoder:8.0"
 
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
 

@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <!-- ============================= -->
+    <!-- 1. 프로퍼티 (Variables) 정의   -->
+    <!-- ============================= -->
+    <property name="LOG_DIR" value="logs" /> <!-- 로그 파일이 저장될 디렉토리 경로. 상대 경로이므로 프로젝트 루트 기준 'logs' 폴더 -->
+    <property name="LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} [%X{traceId:-}] - %msg%n"/>
+
+    <!-- ============================================== -->
+    <!-- 2. Spring Boot 기본 설정 포함 (Include)        -->
+    <!-- ============================================== -->
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    <include resource="org/springframework/boot/logging/logback/console-appender.xml" />
+
+    <!-- ============================================ -->
+    <!-- 3. 프로파일별 설정 (Spring Profile Specific) -->
+    <!-- ============================================ -->
+    <springProfile name="local | dev">
+        <!-- ===== CONSOLE 어펜더 재정의 ===== -->
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <!-- 인코더 설정을 직접 지정 -->
+            <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+                <!-- 우리가 정의한 LOG_PATTERN 변수를 사용하도록 명시 -->
+                <pattern>${LOG_PATTERN}</pattern>
+                <charset>UTF-8</charset>
+            </encoder>
+        </appender>
+
+        <!-- ===== 로거(Logger) 설정 ===== -->
+        <!-- name: 로그 레벨을 적용할 패키지 또는 클래스 경로 -->
+        <!-- level: 출력할 로그 레벨 (TRACE > DEBUG > INFO > WARN > ERROR) -->
+        <logger name="com.laze.backend" level="DEBUG" />
+        <logger name="org.mybatis" level="TRACE" />
+        <!-- <logger name="jdbc.resultsettable" level="DEBUG" /> --> <!-- 필요시 주석 해제하면 SQL 쿼리 결과를 테이블 형태로 보여주는 라이브러리(log4jdbc-log4j2 같은 것 사용 시) 로그 출력 -->
+
+        <!-- ===== 루트 로거(Root Logger) 설정 ===== -->
+        <root level="INFO"> <!-- 기본 로그 레벨은 INFO -->
+            <!-- ===== Appender 참조 ===== -->
+            <appender-ref ref="CONSOLE" />
+        </root>
+    </springProfile>
+
+    <!-- 'prod' 프로파일 -->
+    <springProfile name="prod">
+        <logger name="com.laze.backend" level="INFO" />
+
+        <appender name="FILE_TEXT" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <file>${LOG_DIR}/app-text.log</file>
+            <!-- 로그 메시지 형식 인코더 설정 -->
+            <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+                <pattern>${LOG_PATTERN}</pattern> <!-- 위에서 정의한 LOG_PATTERN 변수 사용 -->
+                <charset>UTF-8</charset> <!-- 인코딩 설정 -->
+            </encoder>
+
+            <!-- 로그 파일 롤링(분리) 정책 설정 -->
+            <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+                <!-- 롤링 정책 클래스 시간에 따라 파일을 분리 -->
+                <fileNamePattern>${LOG_DIR}/archive/app-text-%d{yyyy-MM-dd}.log.gz</fileNamePattern>
+                <maxHistory>30</maxHistory> <!-- 보관할 아카이브 파일 최대 개수 (여기서는 30일치) -->
+                <totalSizeCap>3GB</totalSizeCap> <!-- 전체 아카이브 파일의 최대 크기 (예: 3GB 초과 시 오래된 파일부터 삭제) (선택 사항) -->
+            </rollingPolicy>
+        </appender>
+
+        <!-- JSON 파일 Appender 정의 (RollingFileAppender + LogstashEncoder 사용) -->
+        <appender name="FILE_JSON" class="ch.qos.logback.core.rolling.RollingFileAppender">
+
+            <file>${LOG_DIR}/app-json.log</file> <!-- JSON 로그 파일 경로와 이름 -->
+
+            <!-- 로그 메시지 형식 인코더 설정 (JSON 형식) -->
+            <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+                <charset>UTF-8</charset> <!-- 인코딩 설정 -->
+                <includeMdc>true</includeMdc>
+            </encoder>
+
+            <!-- 로그 파일 롤링 정책 설정 -->
+            <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+                <fileNamePattern>${LOG_DIR}/archive/app-json-%d{yyyy-MM-dd}.log.gz</fileNamePattern>
+                <maxHistory>30</maxHistory>
+                <totalSizeCap>3GB</totalSizeCap>
+            </rollingPolicy>
+        </appender>
+
+        <!-- ===== 루트 로거(Root Logger) 설정 (prod 프로파일) ===== -->
+        <root level="INFO">
+            <appender-ref ref="FILE_TEXT" /> <!-- 텍스트 파일 Appender 참조 -->
+            <appender-ref ref="FILE_JSON" /> <!-- JSON 파일 Appender 참조 -->
+            <!-- 필요시 콘솔 출력을 유지 <appender-ref ref="CONSOLE" /> -->
+        </root>
+    </springProfile>
+
+    <!-- 'test' 프로파일 -->
+    <springProfile name="test">
+        <logger name="com.laze.backend" level="INFO" />
+        <root level="INFO">
+            <appender-ref ref="CONSOLE" />
+        </root>
+    </springProfile>
+
+</configuration>
