@@ -63,8 +63,8 @@ public class ApiResponseWrapper implements ResponseBodyAdvice<Object> {
      */
     @Override
     public Object beforeBodyWrite(Object body, MethodParameter returnType, MediaType selectedContentType,
-                                  Class<? extends HttpMessageConverter<?>> selectedConverterType,
-                                  ServerHttpRequest request, ServerHttpResponse response) {
+                                Class<? extends HttpMessageConverter<?>> selectedConverterType,
+                                ServerHttpRequest request, ServerHttpResponse response) {
 
         // Controller 에서 이미 ApiResponse 로 감싸서 반환했거나,
         // GlobalExceptionHandler 에서 이미 ApiResponse 로 실패 응답을 만든 경우,
