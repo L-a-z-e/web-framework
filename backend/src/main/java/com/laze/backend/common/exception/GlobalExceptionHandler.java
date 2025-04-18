@@ -9,6 +9,8 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.util.stream.Collectors;
+
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -32,17 +34,30 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<Void>> handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
         log.warn("MethodArgumentNotValidException occurred: {}", e.getMessage());
-        String errorMessage = e.getBindingResult().getAllErrors().get(0).getDefaultMessage();
         ErrorCode invalidInput = ErrorCode.INVALID_INPUT_VALUE;
+
+        String errorDetails = e.getBindingResult().getFieldErrors().stream()
+            .map(fieldError -> String.format("'%s': %s", fieldError.getField(), fieldError.getDefaultMessage()))
+            .collect(Collectors.joining("\n"));
+
+        String errorMessage = invalidInput.getMessage() + "\n" + errorDetails;
+
         return ResponseEntity.status(invalidInput.getStatus())
             .body(ApiResponse.fail(invalidInput.getCode(), errorMessage));
+
     }
 
     @ExceptionHandler(BindException.class)
     public ResponseEntity<ApiResponse<Void>> handleBindException(BindException e) {
         log.warn("BindException occurred: {}", e.getMessage());
-        String errorMessage = e.getBindingResult().getAllErrors().get(0).getDefaultMessage();
         ErrorCode invalidInput = ErrorCode.INVALID_INPUT_VALUE;
+
+        String errorDetails = e.getBindingResult().getFieldErrors().stream()
+            .map(fieldError -> String.format("'%s': %s", fieldError.getField(), fieldError.getDefaultMessage()))
+            .collect(Collectors.joining("\n"));
+
+        String errorMessage = invalidInput.getMessage() + "\n" + errorDetails;
+
         return ResponseEntity.status(invalidInput.getStatus())
             .body(ApiResponse.fail(invalidInput.getCode(), errorMessage));
     }
