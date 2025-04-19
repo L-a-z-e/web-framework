@@ -7,6 +7,14 @@
         </div>
       </template>
       <el-form ref="loginFormRef" :model="loginForm" :rules="loginRules" label-width="0px" @keyup.enter="handleLogin">
+        <el-form-item prop="cmpCd">
+          <el-input
+            v-model="loginForm.cmpCd"
+            placeholder="Company Code"
+            :prefix-icon="OfficeBuilding"
+          clearable
+          />
+        </el-form-item>
         <el-form-item prop="empId">
           <el-input
             v-model="loginForm.empId"
@@ -42,7 +50,7 @@
 import { ref, reactive } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElCard, ElForm, ElFormItem, ElInput, ElButton, ElAlert, type FormInstance, type FormRules } from 'element-plus';
-import { User, Lock } from '@element-plus/icons-vue';
+import { User, Lock, OfficeBuilding } from '@element-plus/icons-vue';
 import { useAuthStore } from '@/store';
 import { loginApi, getMeApi } from '@/services/auth';
 import type {UserInfo} from "@/types/user.ts";
@@ -52,6 +60,7 @@ const authStore = useAuthStore();
 
 const loginFormRef = ref<FormInstance>();
 const loginForm = reactive({
+  cmpCd: '',
   empId: '',
   password: '',
 });
@@ -60,6 +69,7 @@ const errorMessage = ref<string | null>(null);
 
 // 폼 유효성 검사 규칙
 const loginRules = reactive<FormRules>({
+  cmpCd: [{ required: true, message: '회사 코드를 입력해주세요.', trigger: 'blur' }],
   empId: [{ required: true, message: '아이디를 입력해주세요.', trigger: 'blur' }],
   password: [{ required: true, message: '비밀번호를 입력해주세요.', trigger: 'blur' }],
 });

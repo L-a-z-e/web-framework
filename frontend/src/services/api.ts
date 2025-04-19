@@ -9,8 +9,12 @@ console.log('API Base URL:', baseURL);
 const api: AxiosInstance = axios.create({
   baseURL: baseURL,
   withCredentials: true,
+  withXSRFToken: true,
+  xsrfCookieName: 'XSRF-TOKEN',
+  xsrfHeaderName: 'X-XSRF-TOKEN',
   headers: {
     'Content-Type': 'application/json',
+
   },
   timeout: 5000,
 });
@@ -24,6 +28,22 @@ api.interceptors.request.use(
     // const token = localStorage.getItem('accessToken');
     // if (token) {
     //   config.headers.Authorization = `Bearer ${token}`;
+    // }
+    // Todo Csrf 토큰 추가
+    // const unsafeMethods = ['POST', 'PUT', 'DELETE', 'PATCH'];
+    // if (config.method && unsafeMethods.includes(config.method.toUpperCase())) {
+    //   const csrfToken = getCsrfTokenFromCookie();
+    //   console.log('CSRF Token from Cookie:', csrfToken);
+    //   // 토큰 값이 있으면 X-CSRF-TOKEN 헤더 추가
+    //   if (csrfToken) {
+    //     config.headers['X-XSRF-TOKEN'] = csrfToken;
+    //     console.log('CSRF Token added to header:', csrfToken); // 디버깅용 로그
+    //   } else {
+    //     // 토큰이 없을 경우 경고 로그 또는 에러 처리
+    //     console.warn('CSRF token (XSRF-TOKEN) not found in cookie. Request might be rejected by the server if CSRF protection is enabled.');
+    //
+    //     return Promise.reject(new Error('CSRF token not found'));
+    //   }
     // }
     return config;
   },
@@ -67,6 +87,17 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+function getCsrfTokenFromCookie(): string | null {
+  const cookies = document.cookie.split(';');
+  for (let i = 0; i < cookies.length; i++) {
+    let cookie = cookies[i].trim();
+    if (cookie.startsWith('XSRF-TOKEN=')) {
+      return decodeURIComponent(cookie.substring('XSRF-TOKEN='.length));
+    }
+  }
+  return null;
+}
 
 // 생성된 Axios 인스턴스 내보내기
 export default api;

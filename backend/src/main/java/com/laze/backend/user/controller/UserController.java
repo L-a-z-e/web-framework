@@ -1,13 +1,22 @@
 package com.laze.backend.user.controller;
 
+import com.laze.backend.common.dto.ApiResponse;
 import com.laze.backend.security.dto.CustomUserDetails;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException; // 필요시 추가
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
+@Slf4j
 @RequestMapping("api/user")
 public class UserController {
 
@@ -27,5 +36,25 @@ public class UserController {
             // 또는 접근 거부 예외 발생
             throw new AccessDeniedException("인증 정보가 유효하지 않습니다.");
         }
+    }
+
+    @PostMapping("/csrf") // POST 메소드로 매핑
+    public ApiResponse<String> testCsrfProtection() {
+
+        log.info("CSRF protected endpoint accessed successfully!");
+        return ApiResponse.ok("CSRF test successful!");
+    }
+
+    @PostMapping("/logout")
+    public ApiResponse<Void> logout(HttpServletRequest request,
+                                    HttpServletResponse response) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null) {
+            // 세션 무효화, SecurityContext 클리어, 쿠키 삭제
+            new SecurityContextLogoutHandler()
+                .logout(request, response, auth);
+            log.info("User '{}' logged out successfully.", auth.getName());
+        }
+        return ApiResponse.ok();
     }
 }

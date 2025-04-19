@@ -23,8 +23,12 @@ logging:
   level:
     com.laze.backend: DEBUG
     org.mybatis: TRACE
-    # Spring Security 상세 로그 (필요시 주석 해제)
-    # org.springframework.security: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.security.web.csrf: DEBUG
+    org.springframework.security.web.FilterChainProxy: DEBUG
+#    org.springframework.security.web.csrf: TRACE
+#    org.springframework.web: DEBUG # 웹 관련 로그도 보면 도움될 수 있음
+
 
 # --- Springdoc (Swagger UI) Local 환경 설정 ---
 #springdoc:

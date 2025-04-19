@@ -2,37 +2,106 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.laze.backend.user.mapper.UserMapper">
 
-    <select id="findUserAuthByUsername" parameterType="string" resultType="com.laze.backend.security.dto.UserAuthInfo">
-            SELECT
-                   CMP_CD
-                 , EMP_ID
-                 , EMP_NM
-                 , DEPT_CD
-                 , DEPT_NM
-                 , JOBCLS_CD
-                 , JOBCLS_NM
-                 , TEL_NO
-                 , HP_NO
-                 , MAIL
-                 , RETM_YN
-                 , PWNO
-                 , PWNO_ERROR_RTRV
-                 , PWNO_CHG_DT
-                 , RMK
-                 , REG_EMP_ID
-                 , REG_EMP_NM
-                 , REG_DTM
-                 , CHG_EMP_ID
-                 , CHG_EMP_NM
-                 , CHG_DTM
-              FROM TB_FW_EMP
-             WHERE EMP_ID = #{empId}
-    </select>
+    <!-- UserSessionInfo DTO 매핑을 위한 ResultMap 정의 -->
+    <resultMap id="userInfoMap" type="com.laze.backend.security.dto.UserInfo">
+        <!-- PK 컬럼 매핑 (성능 및 캐시 관련 이점) -->
+        <id property="empId" column="EMP_ID"/>
+        <!-- FW_EMP 테이블 컬럼 매핑 -->
+        <result property="cmpCd" column="CMP_CD"/>
+        <result property="empNm" column="EMP_NM"/>
+        <result property="deptCd" column="DEPT_CD"/>
+        <result property="jobclsCd" column="JOBCLS_CD"/>
+        <result property="jobclsNm" column="JOBCLS_NM"/>
+        <result property="telNo" column="TEL_NO"/>
+        <result property="hpNo" column="HP_NO"/>
+        <result property="mail" column="MAIL"/>
+        <result property="retmYn" column="RETM_YN"/>
+        <result property="pwno" column="PWNO"/>
+        <result property="pwnoErrorRtrv" column="PWNO_ERROR_RTRV"/>
+        <result property="pwnoChgDt" column="PWNO_CHG_DT"/>
 
-    <select id="findAuthoritiesByUserId" parameterType="string" resultType="string">
-        /* 사용자 ID 기반 권한(Role 또는 Authority) 문자열 목록 조회 쿼리 */
-        /* 예: 사용자-역할 테이블 조인 */
-        SELECT 'DEFAULT_USER' FROM DUAL
+        <!-- FW_CMP 테이블 컬럼 매핑 (JOIN 결과) -->
+        <result property="cmpNm" column="CMP_NM"/>
+        <result property="bizcpRegNo" column="BIZCP_REG_NO"/>
+        <result property="ceoNm" column="CEO_NM"/>
+        <result property="rprsTelNo" column="RPRS_TEL_NO"/>
+        <result property="postNo" column="POST_NO"/>
+        <result property="addr" column="ADDR"/>
+
+        <!-- FW_DEPT 테이블 컬럼 매핑 (JOIN 결과) -->
+        <result property="deptNm" column="DEPT_NM"/>
+        <result property="hqCd" column="HQ_CD"/>
+        <result property="hqNm" column="HQ_NM"/>
+        <result property="dpldEmpId" column="DPLD_EMP_ID"/>
+
+        <!-- 권한 그룹 ID 목록 매핑 (1:N 관계) -->
+        <!-- ofType: 컬렉션 요소의 타입 -->
+        <!-- javaType: 컬렉션 자체의 타입 (List, Set 등) -->
+        <collection property="authorityGroupIds" ofType="java.lang.String" javaType="java.util.ArrayList">
+            <!-- JOIN 결과에서 권한 그룹 ID 컬럼을 가져와 List<String>으로 만듦 -->
+            <!-- 중복 제거가 필요하다면 SELECT 쿼리에서 DISTINCT 사용 또는 javaType="java.util.HashSet" 사용 고려 -->
+            <result column="AUTH_GRP_ID"/>
+        </collection>
+
+        <!-- 접근 가능 메뉴 ID 목록 매핑 (1:N 관계) -->
+        <collection property="accessibleMenuIds" ofType="java.lang.String" javaType="java.util.HashSet">
+            <!-- JOIN 결과에서 메뉴 ID 컬럼을 가져와 Set<String>으로 만듦 (자동 중복 제거) -->
+            <result column="MENU_ID"/>
+        </collection>
+    </resultMap>
+
+    <!-- 로그인 사용자 세션 정보 조회 쿼리 -->
+    <select id="findUserInfoByCmpCdAndEmpId" resultMap="userInfoMap" parameterType="string">
+        SELECT
+            -- 직원 정보
+            e.CMP_CD,
+            e.EMP_ID,
+            e.EMP_NM,
+            e.DEPT_CD,
+            e.JOBCLS_CD,
+            e.JOBCLS_NM,
+            e.TEL_NO,
+            e.HP_NO,
+            e.MAIL,
+            e.RETM_YN,
+            e.PWNO,
+            e.PWNO_ERROR_RTRV,
+            e.PWNO_CHG_DT,
+            -- 회사 정보
+            c.CMP_NM,
+            c.BIZCP_REG_NO,
+            c.CEO_NM,
+            c.RPRS_TEL_NO,
+            c.POST_NO,
+            c.ADDR,
+            -- 부서 정보
+            d.DEPT_NM,
+            d.HQ_CD,
+            d.HQ_NM,
+            d.DPLD_EMP_ID,
+            -- 권한 그룹 ID (사용자가 속한 *활성화된* 그룹)
+            ag.AUTH_GRP_ID,
+            -- 접근 가능 메뉴 ID (*활성화된* 그룹에 매핑된 *활성화된* 메뉴)
+            am.MENU_ID
+        FROM
+            FW_EMP e
+            -- 회사 정보 JOIN
+            LEFT JOIN FW_CMP c ON e.CMP_CD = c.CMP_CD
+            -- 부서 정보 JOIN
+            LEFT JOIN FW_DEPT d ON e.CMP_CD = d.CMP_CD AND e.DEPT_CD = d.DEPT_CD
+            -- 권한/메뉴 정보 JOIN
+            -- 1. 직원이 속한 *활성화된* 권한 매핑 조회
+            LEFT JOIN FW_AUTH_EMP ae ON e.CMP_CD = ae.CMP_CD AND e.EMP_ID = ae.EMP_ID AND ae.USE_YN = 'Y'
+            -- 2. 해당 권한 매핑의 *활성화된* 권한 그룹 정보 조회
+            LEFT JOIN FW_AUTH_GRP ag ON ae.CMP_CD = ag.CMP_CD AND ae.AUTH_GRP_ID = ag.AUTH_GRP_ID AND ag.USE_YN = 'Y'
+            -- 3. 해당 권한 그룹에 매핑된 *활성화된* 메뉴 정보 조회
+            LEFT JOIN FW_AUTH_MENU am ON ag.CMP_CD = am.CMP_CD AND ag.AUTH_GRP_ID = am.AUTH_GRP_ID AND am.USE_YN = 'Y'
+            -- JOIN 끝
+        WHERE
+            e.EMP_ID = #{empId}
+        AND e.CMP_CD = #{cmpCd}
+        AND c.USE_YN = 'Y'
+        AND d.USE_YN = 'Y'
     </select>
 
 </mapper>

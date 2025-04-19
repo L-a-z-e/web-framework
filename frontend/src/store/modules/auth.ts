@@ -104,7 +104,7 @@ export const useAuthStore = defineStore('auth', () => {
 
       try {
         // TODO: 백엔드 로그아웃 API 호출 ('/logout' POST)
-        // 예시: await api.post('/logout');
+        await api.post('/api/user/logout');
         console.warn('logout(): Backend API call not implemented yet.');
       } catch (error) {
         console.error('Error during backend logout:', error);
