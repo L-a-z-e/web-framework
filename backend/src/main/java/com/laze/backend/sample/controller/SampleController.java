@@ -1,7 +1,7 @@
 package com.laze.backend.sample.controller;
 
 // --- !!! 반환 타입 변경 및 ResponseEntity 제거 !!! ---
-import com.laze.backend.common.aop.NoApiResponseWrapper;
+import com.laze.backend.common.annotation.NoApiResponseWrapper;
 import com.laze.backend.sample.dto.SampleRequestDto;
 import com.laze.backend.sample.dto.SampleResponseDto;
 import com.laze.backend.sample.service.SampleService;
@@ -10,7 +10,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

@@ -98,18 +98,41 @@ export const useAuthStore = defineStore('auth', () => {
      * 스토어 상태를 초기화하고, 백엔드 로그아웃 API 를 호출합니다.
      */
     async function logout() {
-      console.log('Performing logout action...');
-      setUserInfo(null); // 스토어의 사용자 정보 제거
-      localStorage.removeItem('tempLoggedIn'); // 임시 로그인 상태 제거
-
       try {
-        // TODO: 백엔드 로그아웃 API 호출 ('/logout' POST)
-        await api.post('/api/user/logout');
-        console.warn('logout(): Backend API call not implemented yet.');
+        // 로그아웃 요청 전 CSRF 토큰 확인 (디버깅용)
+        const csrfToken = document.cookie.split(';')
+          .map(c => c.trim())
+          .find(c => c.startsWith('XSRF-TOKEN='));
+        console.log('로그아웃 요청 시 CSRF 쿠키:', csrfToken);
+
+        // 로그아웃 API 호출
+        const response = await api.post('/api/user/logout');
+        console.log('로그아웃 성공:', response.data);
+
+        // 상태 초기화 및 리디렉션 (기존 코드 유지)
+        setUserInfo(null);
+
+        return true;
       } catch (error) {
-        console.error('Error during backend logout:', error);
-        // 에러가 발생해도 프론트엔드 상태는 초기화된 상태 유지
+        console.error('로그아웃 도중 오류 발생:', error);
+
+        // 실패해도 클라이언트 측에서는 로그아웃 처리
+        setUserInfo(null);
+        return false;
       }
+
+      // console.log('Performing logout action...');
+      // setUserInfo(null); // 스토어의 사용자 정보 제거
+      // localStorage.removeItem('tempLoggedIn'); // 임시 로그인 상태 제거
+      //
+      // try {
+      //   // TODO: 백엔드 로그아웃 API 호출 ('/logout' POST)
+      //   await api.post('/api/user/logout');
+      //   console.warn('logout(): Backend API call not implemented yet.');
+      // } catch (error) {
+      //   console.error('Error during backend logout:', error);
+      //   // 에러가 발생해도 프론트엔드 상태는 초기화된 상태 유지
+      // }
     }
 
     // 스토어에서 외부로 노출할 상태, getter, action 반환

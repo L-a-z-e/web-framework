@@ -28,7 +28,7 @@ const runCsrfTest = async () => {
   console.log('Running CSRF test...');
 
   try {
-    const response = await apiClient.post<ApiResponse<String>>('/api/user/csrf', {});
+    const response = await apiClient.post<ApiResponse<String>>('/api/user/test');
 
     if (response.status === 200 && response.data?.success) {
       console.log('CSRF Test API Response:', response.data);

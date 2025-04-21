@@ -1,4 +1,5 @@
 package com.laze.backend.common.aop;
+import com.laze.backend.common.annotation.NoApiResponseWrapper;
 import com.laze.backend.common.dto.ApiResponse;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.io.Resource; // 파일 다운로드 등 Resource 타입 확인

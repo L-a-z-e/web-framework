@@ -50,18 +50,35 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http, CorsConfigurationSource corsConfigurationSource) throws Exception {
 
-//        CookieCsrfTokenRepository csrfTokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
-//        csrfTokenRepository.setHeaderName("X-XSRF-TOKEN");
+        // CSRF 토큰 저장소 설정
+        CookieCsrfTokenRepository csrfTokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
+        csrfTokenRepository.setCookieName("XSRF-TOKEN");  // 쿠키 이름 설정
+        csrfTokenRepository.setHeaderName("X-XSRF-TOKEN");  // 헤더 이름 설정
+        csrfTokenRepository.setCookiePath("/");
+
+        // CsrfTokenRequestAttributeHandler 생성 (Spring Security 6.x에서 권장)
+        CsrfTokenRequestAttributeHandler requestHandler = new CsrfTokenRequestAttributeHandler();
+        // 토큰을 "_csrf" 요청 속성으로 저장
+        requestHandler.setCsrfRequestAttributeName("_csrf");
+
         http
             .cors(cors -> cors.configurationSource(corsConfigurationSource))
 //            .csrf(Customizer.withDefaults())
-            .csrf(AbstractHttpConfigurer::disable)
-//            .csrf(csrf -> csrf
+//            .csrf(AbstractHttpConfigurer::disable)
+            .csrf(csrf -> csrf
+                .csrfTokenRepository(csrfTokenRepository)
+                .csrfTokenRequestHandler(requestHandler)
+                .ignoringRequestMatchers(
+                    new AntPathRequestMatcher("/api/login", "POST"),
+                    new AntPathRequestMatcher("/api/user/csrf", "GET"),
+                    new AntPathRequestMatcher("/api/user/logout", "POST")
+                )
+            )
 //                .csrfTokenRepository(csrfTokenRepository)
 //                .ignoringRequestMatchers(new AntPathRequestMatcher("/api/login", "POST")))
 //                .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler()))
             .authorizeHttpRequests(authz -> authz
-                .requestMatchers("/", "/login", "/error", "/api/public/**", "/api/user/csrf").permitAll()
+                .requestMatchers("/", "/login", "/error", "/api/public/**", "/api/user/**").permitAll()
                 .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
                 .anyRequest().authenticated() // 나머지 인증 필요
             )
@@ -77,7 +94,15 @@ public class SecurityConfig {
 //            )
             .logout(logout -> logout
                 .logoutUrl("/api/user/logout")
-                .logoutSuccessUrl("/login?logout=true")
+                .logoutSuccessHandler((request, response, authentication) -> {
+                    response.setContentType("application/json");
+                    response.setCharacterEncoding("UTF-8");
+                    // API 응답 형식에 맞게 응답 구조 수정
+                    ApiResponse<Void> apiResponse = ApiResponse.ok();
+                    ObjectMapper objectMapper = new ObjectMapper();
+                    objectMapper.writeValue(response.getWriter(), apiResponse);
+                })
+
                 .invalidateHttpSession(true)
                 .deleteCookies("JSESSIONID")
                 .permitAll()
@@ -85,6 +110,7 @@ public class SecurityConfig {
             .sessionManagement(session -> session
                 .sessionFixation().changeSessionId()
                 .sessionCreationPolicy(SessionCreationPolicy.ALWAYS)
+                .invalidSessionUrl("/login?expired=true")
             )
             .authenticationProvider(cmpUserAuthenticationProvider);
 
@@ -128,10 +154,8 @@ public class SecurityConfig {
                 errorMessage = "존재하지 않는 사용자입니다.";
             } // ... 기타 필요한 예외 처리 ...
 
-            // ApiResponse 사용 (또는 직접 JSON 문자열 생성)
             ApiResponse<Void> failResponse = ApiResponse.fail(errorCode, errorMessage);
             try {
-                // ObjectMapper 인스턴스 생성 또는 주입 필요
                 ObjectMapper objectMapper = new ObjectMapper();
                 objectMapper.writeValue(response.getWriter(), failResponse);
             } catch (IOException e) {

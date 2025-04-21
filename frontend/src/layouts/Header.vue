@@ -50,9 +50,11 @@ const router = useRouter();
 const route = useRoute();
 const authStore = useAuthStore();
 const currentRouteTitle = computed(() => route.meta.title || 'Page');
-function logout() {
-  authStore.logout();
-  router.push('/login'); }
+
+async function logout() {
+  await authStore.logout();
+  router.push('/login');
+}
 </script>
 
 <style scoped>

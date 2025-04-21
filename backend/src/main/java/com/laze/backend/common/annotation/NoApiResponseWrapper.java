@@ -1,4 +1,4 @@
-package com.laze.backend.common.aop;
+package com.laze.backend.common.annotation;
 
 import java.lang.annotation.*;
 

@@ -9,6 +9,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.data:spring-data-commons' // ✅ 다른 스타터에 의해 포함되는지 확인 > 미포함됨 확인
+    implementation 'org.springframework.boot:spring-boot-starter-aop'
     implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.4' // ✅ BOM에서 버전 관리 안하므로 버전 명시
     implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0" // ✅ BOM에서 버전 관리 안하므로 버전 명시
 //    implementation 'org.mapstruct:mapstruct' // ☑️ root에서 이미 버전관리 중이므로 제거 적절한지 확인
