@@ -18,12 +18,12 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
@@ -43,18 +43,12 @@ public class SecurityConfig {
 
     private final CorsConfigurationSource corsConfigurationSource; // CORS 설정 Bean
     private final CustomAuthenticationSuccessHandler customAuthenticationSuccessHandler; // 로그인 성공 핸들러
-    // private final CustomUserDetailsService customUserDetailsService; // Provider가 직접 DB 조회 시 불필요
-    private final CmpUserAuthenticationProvider cmpUserAuthenticationProvider; // 커스텀 Provider Bean 주입 (@Component 가정)
+    // private final CustomUserDetailsService customUserDetailsService; ☑️ 삭제 고려
+    private final CmpUserAuthenticationProvider cmpUserAuthenticationProvider; // 커스텀 Provider Bean 주입
     private final AuthenticationConfiguration authenticationConfiguration; // AuthenticationManager 얻기 위함
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http, CorsConfigurationSource corsConfigurationSource) throws Exception {
-
-        // CSRF 토큰 저장소 설정
-        CookieCsrfTokenRepository csrfTokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
-        csrfTokenRepository.setCookieName("XSRF-TOKEN");  // 쿠키 이름 설정
-        csrfTokenRepository.setHeaderName("X-XSRF-TOKEN");  // 헤더 이름 설정
-        csrfTokenRepository.setCookiePath("/");
 
         // CsrfTokenRequestAttributeHandler 생성 (Spring Security 6.x에서 권장)
         CsrfTokenRequestAttributeHandler requestHandler = new CsrfTokenRequestAttributeHandler();
@@ -63,49 +57,33 @@ public class SecurityConfig {
 
         http
             .cors(cors -> cors.configurationSource(corsConfigurationSource))
-//            .csrf(Customizer.withDefaults())
-//            .csrf(AbstractHttpConfigurer::disable)
             .csrf(csrf -> csrf
-                .csrfTokenRepository(csrfTokenRepository)
+                .csrfTokenRepository(csrfTokenRepository()) // Bean 사용 변경
                 .csrfTokenRequestHandler(requestHandler)
                 .ignoringRequestMatchers(
-                    new AntPathRequestMatcher("/api/login", "POST"),
+                    new AntPathRequestMatcher("/api/user/login", "POST"),
                     new AntPathRequestMatcher("/api/user/csrf", "GET"),
                     new AntPathRequestMatcher("/api/user/logout", "POST")
                 )
             )
-//                .csrfTokenRepository(csrfTokenRepository)
-//                .ignoringRequestMatchers(new AntPathRequestMatcher("/api/login", "POST")))
-//                .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler()))
             .authorizeHttpRequests(authz -> authz
-                .requestMatchers("/", "/login", "/error", "/api/public/**", "/api/user/**").permitAll()
+                .requestMatchers("/", "/error", "/api/user/login", "/api/user/csrf").permitAll()
                 .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
                 .anyRequest().authenticated() // 나머지 인증 필요
             )
             .addFilterAt(customAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
-//            .formLogin(form -> form
-//                .loginPage("/login")
-//                .loginProcessingUrl("/api/login")
-//                .usernameParameter("empId")
-//                .passwordParameter("password")
-//                .successHandler(customAuthenticationSuccessHandler)
-//                .failureUrl("/login?error=true")
-//                .permitAll()
-//            )
             .logout(logout -> logout
                 .logoutUrl("/api/user/logout")
                 .logoutSuccessHandler((request, response, authentication) -> {
                     response.setContentType("application/json");
                     response.setCharacterEncoding("UTF-8");
-                    // API 응답 형식에 맞게 응답 구조 수정
                     ApiResponse<Void> apiResponse = ApiResponse.ok();
                     ObjectMapper objectMapper = new ObjectMapper();
                     objectMapper.writeValue(response.getWriter(), apiResponse);
                 })
-
                 .invalidateHttpSession(true)
-                .deleteCookies("JSESSIONID")
-                .permitAll()
+                .deleteCookies("JSESSIONID", "XSRF-TOKEN")
+//                .permitAll() ☑️ 제외 해도 되는지 확인
             )
             .sessionManagement(session -> session
                 .sessionFixation().changeSessionId()
@@ -134,7 +112,7 @@ public class SecurityConfig {
         filter.setAuthenticationFailureHandler((request, response, exception) -> {
             log.warn("Login failed for user '{}': {}", request.getParameter(CustomAuthenticationFilter.SPRING_SECURITY_FORM_USERNAME_KEY), exception.getMessage());
 
-            response.setStatus(HttpStatus.UNAUTHORIZED.value()); // 401 상태 코드
+            response.setStatus(HttpStatus.UNAUTHORIZED.value());
             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
             response.setCharacterEncoding(StandardCharsets.UTF_8.name());
 
@@ -142,7 +120,7 @@ public class SecurityConfig {
             String errorCode = "LOGIN_FAILED"; // 기본 실패 코드
             String errorMessage = "아이디 또는 비밀번호가 올바르지 않습니다."; // 기본 메시지
 
-            // 특정 예외 타입에 따라 메시지 구체화 (선택적)
+            // 특정 예외 타입에 따라 메시지 구체화
             if (exception instanceof LockedException) {
                 errorCode = "ACCOUNT_LOCKED";
                 errorMessage = "계정이 잠겼습니다.";
@@ -150,9 +128,9 @@ public class SecurityConfig {
                 errorCode = "ACCOUNT_DISABLED";
                 errorMessage = "비활성화된 계정입니다.";
             } else if (exception instanceof UsernameNotFoundException) {
-                // UsernameNotFound는 보통 BadCredentials로 변환되지만, 직접 잡는다면
+                errorCode = "USER_NOT_FOUND";
                 errorMessage = "존재하지 않는 사용자입니다.";
-            } // ... 기타 필요한 예외 처리 ...
+            }
 
             ApiResponse<Void> failResponse = ApiResponse.fail(errorCode, errorMessage);
             try {
@@ -162,41 +140,15 @@ public class SecurityConfig {
                 log.error("Error writing JSON error response", e);
             }
         });
-        // ---------------------------------------------
 
         return filter;
 
-        // 필터에 로그인 실패 핸들러 설정 (기본: 지정된 URL로 리다이렉트)
-//        filter.setAuthenticationFailureHandler((request, response, exception) -> {
-//            log.warn("Login failed: {}", exception.getMessage()); // 실패 로그 추가
-//            String failureUrl = "/login?error=true"; // 실패 시 이동할 URL
-//            // request.getContextPath() 를 추가하여 Context Path가 있는 경우에도 올바르게 동작하도록 함
-//            response.sendRedirect(request.getContextPath() + failureUrl);
-//        });
-
-        // (Optional) 파라미터 이름 변경 시 여기서 Setter 호출 가능
-        // filter.setCompanyCodeParameter("companyCode");
-        // filter.setUsernameParameter("employeeId");
-        // filter.setPasswordParameter("userPassword");
-
-//        return filter;
     }
-
-//
-//    @Bean
-//    public AuthenticationProvider authenticationProvider() {
-//        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-//        provider.setUserDetailsService(customUserDetailsService);
-//        provider.setPasswordEncoder(passwordEncoder());
-//        return provider;
-//    }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // --- !!! 허용 출처를 9000 포트로 변경 !!! ---
         configuration.setAllowedOrigins(Arrays.asList("http://localhost:9000")); //
-        // -----------------------------------------
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
@@ -206,4 +158,14 @@ public class SecurityConfig {
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
+
+    @Bean
+    public CsrfTokenRepository csrfTokenRepository() {
+        CookieCsrfTokenRepository tokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
+        tokenRepository.setCookieName("XSRF-TOKEN");
+        tokenRepository.setHeaderName("X-XSRF-TOKEN");
+        tokenRepository.setCookiePath("/");
+        return tokenRepository;
+    }
+
 }

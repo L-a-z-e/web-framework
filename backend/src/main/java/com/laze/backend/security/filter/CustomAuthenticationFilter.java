@@ -19,7 +19,7 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 
     // RequestMatcher: 이 필터가 어떤 요청을 처리할지 결정 (로그인 URL 및 메소드)
     private static final AntPathRequestMatcher LOGIN_REQUEST_MATCHER =
-        new AntPathRequestMatcher("/api/login", "POST"); // SecurityConfig 설정과 일치
+        new AntPathRequestMatcher("/api/user/login", "POST"); // SecurityConfig 설정과 일치
 
     private String companyCodeParameter = SPRING_SECURITY_FORM_COMPANY_CODE_KEY;
     private boolean postOnly = true;
@@ -84,7 +84,6 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
     }
 
     /**
-     * (선택적) POST 요청만 허용할지 여부 설정 (기본값 true)
      * @param postOnly true면 POST만 허용
      */
     @Override

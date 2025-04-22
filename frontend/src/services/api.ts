@@ -38,8 +38,6 @@ export async function initializeCsrf(): Promise<void> {
   }
 }
 
-
-
 // --- 요청 인터셉터 (Optional)---
 // 모든 요청 전에 특정 작업을 수행 (예: 인증 토큰 추가 - JWT 사용 시)
 api.interceptors.request.use(

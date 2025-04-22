@@ -6,11 +6,10 @@ import type {MenuInfo} from "@/types/menu.ts";
 const MainLayout = () => import('@/layouts/MainLayout.vue');
 const Login = () => import('@/views/auth/Login.vue');
 const Dashboard = () => import('@/views/dashboard/Dashboard.vue');
-// const Menu = () => import('@/views/menu/Menu.vue'); // 동적 import로 변경
-// const Sample = () => import('@/views/sample/Sample.vue');
+const NotFound = () => import('@/views/common/NotFound.vue')
 const viewModules = import.meta.glob('@/views/**/*.vue');
 
-// --- 라우트 정의 (경로도 필요시 수정) ---
+// --- 라우트 정의 ---
 const routes: Array<RouteRecordRaw> = [
   {
     path: '/login',
@@ -40,13 +39,12 @@ const routes: Array<RouteRecordRaw> = [
       },
     ]
   },
-  // 404 Not Found 페이지 (가장 마지막에 정의)
-  // {
-  //   path: '/:pathMatch(.*)*', // 정의되지 않은 모든 경로
-  //   name: 'NotFound',
-  //   component: NotFound,
-  //   meta: { title: '페이지를 찾을 수 없음' }
-  // },
+  {
+    path: '/:pathMatch(.*)*', // 정의되지 않은 모든 경로
+    name: 'NotFound',
+    component: NotFound,
+    meta: { title: '페이지를 찾을 수 없음' }
+  },
 ];
 
 /**

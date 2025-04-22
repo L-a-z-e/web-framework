@@ -10,7 +10,7 @@ import axios from "axios";
  */
 export const fetchMyMenusApi = async (): Promise<ApiResponse<MenuInfo[]>> => { // <<< 반환 타입을 ApiResponse 로 변경!
   try {
-    const response = await apiClient.get<ApiResponse<MenuInfo[]>>('/api/menus/my');
+    const response = await apiClient.get<ApiResponse<MenuInfo[]>>('/api/menus');
 
     return response.data;
   } catch (error: any) {

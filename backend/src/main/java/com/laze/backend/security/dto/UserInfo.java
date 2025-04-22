@@ -41,6 +41,6 @@ public class UserInfo {
     private String hqNm;
     private String dpldEmpId;
 
-    private List<String> authorityGroupIds; // 사용자가 속한 권한 그룹 ID 목록
-    private Set<String> accessibleMenuIds;  // 접근 가능한 메뉴 ID 목록
+    private List<String> authorityGroupIds;
+    private Set<String> accessibleMenuIds;
 }

@@ -16,7 +16,7 @@ export const loginApi = (credentials: LoginCredentials): Promise<AxiosResponse> 
   if (credentials.empId) params.append('empId', credentials.empId); // usernameParameter 와 일치
   if (credentials.password) params.append('password', credentials.password);
 
-  return api.post('/api/login', params, { // POST 요청 및 데이터 전달
+  return api.post('/api/user/login', params, { // POST 요청 및 데이터 전달
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded' // Content-Type 변경
     },
@@ -29,7 +29,7 @@ export const loginApi = (credentials: LoginCredentials): Promise<AxiosResponse> 
 
 // 로그아웃 API 호출 함수
 export const logoutApi = (): Promise<AxiosResponse> => {
-  return api.post('/api/logout');// CSRF 활성화 시 토큰 필요할 수 있음
+  return api.post('/api/user/logout');// CSRF 활성화 시 토큰 필요할 수 있음
 };
 
 // 현재 사용자 정보 조회 API 호출 함수

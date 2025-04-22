@@ -21,7 +21,6 @@ import java.nio.charset.StandardCharsets;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-// --- !!! AuthenticationSuccessHandler 인터페이스 구현 명시 !!! ---
 public class CustomAuthenticationSuccessHandler implements AuthenticationSuccessHandler {
 
     private final ObjectMapper objectMapper;
