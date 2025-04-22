@@ -7,9 +7,9 @@ import java.util.List;
 
 @Data
 public class MenuDto {
-    private String menuId; // 라우터 경로 역할
+    private String menuId;
     private String menuNm;
-    private String upperMenuId;
+    private String hrnMenuId;
     private Integer menuOrdr;
     private Integer menuLvl;
     private String menuIcon;

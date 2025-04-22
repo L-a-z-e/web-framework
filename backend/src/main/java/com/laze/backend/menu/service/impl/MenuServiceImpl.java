@@ -84,14 +84,14 @@ public class MenuServiceImpl implements MenuService {
                 menu.setChildren(new ArrayList<>());
             }
 
-            String upperMenuId = menu.getUpperMenuId();
+            String hrnMenuId = menu.getHrnMenuId();
 
-            if (upperMenuId == null || upperMenuId.isEmpty()) {
+            if (hrnMenuId == null || hrnMenuId.isEmpty()) {
                 // 상위 메뉴 ID가 없으면 최상위 메뉴이므로 트리에 바로 추가
                 menuTree.add(menu);
             } else {
                 // 상위 메뉴 ID가 있으면 Map에서 상위 메뉴를 찾아 children 에 추가
-                MenuDto parentMenu = menuMap.get(upperMenuId);
+                MenuDto parentMenu = menuMap.get(hrnMenuId);
                 if (parentMenu != null) {
                     // 상위 메뉴의 children 리스트가 null 일 경우 초기화
                     if (parentMenu.getChildren() == null) {
@@ -100,7 +100,7 @@ public class MenuServiceImpl implements MenuService {
                     parentMenu.getChildren().add(menu);
                 } else {
                     // 상위 메뉴를 찾을 수 없는 경우 (데이터 오류 등), 로그 남기고 최상위로 취급하거나 다른 처리
-                    log.warn("Parent menu not found for menuId: {}, upperMenuId: {}. Adding as root.", menu.getMenuId(), upperMenuId);
+                    log.warn("Parent menu not found for menuId: {}, hrnMenuId: {}. Adding as root.", menu.getMenuId(), hrnMenuId);
                     menuTree.add(menu);
                 }
             }

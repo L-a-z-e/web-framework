@@ -3,7 +3,55 @@
 <mapper namespace="com.laze.backend.menu.mapper.MenuMapper">
 
     <select id="findAccessibleMenus" resultType="com.laze.backend.menu.dto.MenuDto" parameterType="java.util.Collection">
+        WITH RECURSIVE
+        /* 권한이 있는 메뉴 목록 */
+        auth_menus AS (
+        SELECT MENU_ID
+        FROM FW_AUTH_MENU
+        WHERE AUTH_GRP_ID IN
+        <foreach item="auth" collection="authorities" open="(" separator="," close=")">
+            #{auth}
+        </foreach>
+        ),
+        /* 모든 상위 메뉴를 재귀적으로 찾는 CTE */
+        menu_hierarchy AS (
+        /* 초기 쿼리: 권한이 있는 메뉴 선택 */
         SELECT
+        m.MENU_ID,
+        m.MENU_NM,
+        m.BIZ_DVCD,
+        m.HRN_MENU_ID,
+        m.MENU_LEV,
+        m.MENU_ORD,
+        m.SCR_ID,
+        m.MENU_MRK_YN,
+        m.MENU_ICON,
+        m.USE_YN
+        FROM FW_MENU m
+        JOIN auth_menus am ON m.MENU_ID = am.MENU_ID
+        WHERE m.USE_YN = 'Y'
+
+        UNION
+
+        /* 재귀 쿼리: 상위 메뉴 찾기 */
+        SELECT
+        p.MENU_ID,
+        p.MENU_NM,
+        p.BIZ_DVCD,
+        p.HRN_MENU_ID,
+        p.MENU_LEV,
+        p.MENU_ORD,
+        p.SCR_ID,
+        p.MENU_MRK_YN,
+        p.MENU_ICON,
+        p.USE_YN
+        FROM FW_MENU p
+        JOIN menu_hierarchy child ON p.MENU_ID = child.HRN_MENU_ID
+        WHERE p.USE_YN = 'Y'
+        )
+
+        /* 최종 결과 출력 */
+        SELECT DISTINCT
         MENU_ID,
         MENU_NM,
         BIZ_DVCD,
@@ -14,22 +62,40 @@
         MENU_MRK_YN,
         MENU_ICON,
         USE_YN
-        FROM
-        FW_MENU
-        WHERE
-        USE_YN = 'Y'
-        <if test="authorities != null and !authorities.isEmpty()">
-            AND (AUTH_CD IS NULL OR AUTH_CD IN
-            <foreach item="auth" collection="authorities" open="(" separator="," close=")">
-                #{auth}
-            </foreach>
-            )
-        </if>
-        <if test="authorities == null or authorities.isEmpty()">
-            AND AUTH_CD IS NULL
-        </if>
-        ORDER BY
-        MENU_LEV ASC, MENU_ORD ASC
+        FROM menu_hierarchy
+        ORDER BY MENU_LEV ASC, MENU_ORD ASC
+
+<!--        SELECT-->
+<!--        MENU_ID,-->
+<!--        MENU_NM,-->
+<!--        BIZ_DVCD,-->
+<!--        HRN_MENU_ID,-->
+<!--        MENU_LEV,-->
+<!--        MENU_ORD,-->
+<!--        SCR_ID,-->
+<!--        MENU_MRK_YN,-->
+<!--        MENU_ICON,-->
+<!--        USE_YN-->
+<!--        FROM-->
+<!--        FW_MENU-->
+<!--        WHERE-->
+<!--        USE_YN = 'Y'-->
+<!--        <if test="authorities != null and !authorities.isEmpty()">-->
+<!--            AND EXISTS (-->
+<!--            SELECT 1-->
+<!--            FROM FW_AUTH_MENU AM-->
+<!--            WHERE AM.MENU_ID = FW_MENU.MENU_ID-->
+<!--            AND AM.AUTH_GRP_ID IN-->
+<!--            <foreach item="auth" collection="authorities" open="(" separator="," close=")">-->
+<!--                #{auth}-->
+<!--            </foreach>-->
+<!--            )-->
+<!--        </if>-->
+<!--&lt;!&ndash;        <if test="authorities == null or authorities.isEmpty()">&ndash;&gt;-->
+<!--&lt;!&ndash;            AND AUTH_CD IS NULL&ndash;&gt;-->
+<!--&lt;!&ndash;        </if>&ndash;&gt;-->
+<!--        ORDER BY-->
+<!--        MENU_LEV ASC, MENU_ORD ASC-->
     </select>
 
 </mapper>

@@ -57,8 +57,8 @@
             :disabled="!isDetailEditable"
             size="small"
           >
-            <el-form-item label="업무구분" prop="jobDvcd"> <!-- Prop 이름 확인 필요 -->
-              <el-select v-model="detailForm.jobDvcd" placeholder="선택">
+            <el-form-item label="업무구분" prop="bizDvcd"> <!-- Prop 이름 확인 필요 -->
+              <el-select v-model="detailForm.bizDvcd" placeholder="선택">
                 <el-option label="프레임워크(FW)" value="FW"></el-option>
                 <el-option label="공통(CO)" value="CO"></el-option>
                 <el-option label="샘플(SP)" value="SP"></el-option>
@@ -71,9 +71,9 @@
             <el-form-item label="메뉴명" prop="menuNm">
               <el-input v-model="detailForm.menuNm" />
             </el-form-item>
-            <el-form-item label="상위메뉴ID" prop="upperMenuId">
+            <el-form-item label="상위메뉴ID" prop="hrnMenuId">
               <!-- TODO: 메뉴 검색 팝업 연동 -->
-              <el-input v-model="detailForm.upperMenuId">
+              <el-input v-model="detailForm.hrnMenuId">
                 <template #append><el-button :icon="Search" /></template>
               </el-input>
             </el-form-item>
@@ -126,10 +126,10 @@ import type { MenuInfo } from '@/types/menu';
 // --- 검색 영역 ---
 const searchFormRef = ref<InstanceType<typeof SearchForm> | null>(null);
 const searchFields = reactive([
-  { key: 'jobDvcd', label: '업무구분', type: 'select', options: [/*...*/] },
+  { key: 'bizDvcd', label: '업무구분', type: 'select', options: [/*...*/] },
   { key: 'menuNm', label: '메뉴명', type: 'text' },
 ]);
-const searchParams = reactive<{ jobDvcd: string | null; menuNm: string }>({ jobDvcd: null, menuNm: '' });
+const searchParams = reactive<{ bizDvcd: string | null; menuNm: string }>({ bizDvcd: null, menuNm: '' });
 
 // --- 그리드 영역 ---
 // --- GridApi 타입 명시 ---
@@ -141,7 +141,7 @@ const gridLoading = ref(false);
 const columnDefs = ref<ColDef[]>([
   { headerName: '메뉴ID', field: 'menuId', width: 120, sortable: true, filter: true, },
   { headerName: '메뉴명', field: 'menuNm', width: 200, sortable: true, filter: true },
-  { headerName: '상위메뉴ID', field: 'upperMenuId', width: 120 },
+  { headerName: '상위메뉴ID', field: 'hrnMenuId', width: 120 },
   { headerName: '레벨', field: 'menuLvl', width: 80, filter: 'agNumberColumnFilter' },
   { headerName: '순서', field: 'menuOrdr', width: 80, sortable: true },
   { headerName: '아이콘', field: 'menuIcon', width: 120 },
@@ -173,8 +173,8 @@ const handleSearch = async (params?: Record<string, any>) => {
     // gridData.value = response.data;
     // --- !!! 임시 데이터 타입 확인 (MenuInfo 에 맞게) !!! ---
     gridData.value = [
-      { menuId: '/menus', menuNm: '메뉴 관리', upperMenuId: '#system_group', menuOrdr: 1, menuLvl: 2, menuIcon: null, useYn: 'Y', authCd: 'ROLE_ADMIN', jobDvcd: "FW"}, // <<< OK: MenuInfo 타입 가정
-      { menuId: '/sample', menuNm: '샘플', upperMenuId: null, menuOrdr: 2, menuLvl: 1, menuIcon: 'Document', useYn: 'Y', authCd: 'ROLE_USER', jobDvcd: "FW"}, // <<< OK: MenuInfo 타입 가정
+      { menuId: '/menus', menuNm: '메뉴 관리', hrnMenuId: '#system_group', menuOrdr: 1, menuLvl: 2, menuIcon: null, useYn: 'Y', authCd: 'ROLE_ADMIN', bizDvcd: "FW"}, // <<< OK: MenuInfo 타입 가정
+      { menuId: '/sample', menuNm: '샘플', hrnMenuId: null, menuOrdr: 2, menuLvl: 1, menuIcon: 'Document', useYn: 'Y', authCd: 'ROLE_USER', bizDvcd: "FW"}, // <<< OK: MenuInfo 타입 가정
     ];
     // --- OK: 그리드 선택 초기화 ---
     gridApi.value?.deselectAll(); // AG Grid API 사용
@@ -197,8 +197,8 @@ const handleRowSelect = (event: RowSelectedEvent) => {
     resetDetailForm();
     // --- OK: MenuInfo -> MenuInfo 로 복사 ---
     Object.assign(detailForm, selectedData);
-    // --- TODO: MenuInfo 에만 있는 필드 처리 (예: jobDvcd) ---
-    // detailForm.jobDvcd = findJobDvcd(selectedData.menuId);
+    // --- TODO: MenuInfo 에만 있는 필드 처리 (예: bizDvcd) ---
+    // detailForm.bizDvcd = findBizDvcd(selectedData.menuId);
 
     isEditing.value = true;
     isDetailEditable.value = true;
