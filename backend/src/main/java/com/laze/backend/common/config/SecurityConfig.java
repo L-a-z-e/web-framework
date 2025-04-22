@@ -3,8 +3,10 @@ package com.laze.backend.common.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.laze.backend.common.dto.ApiResponse;
 import com.laze.backend.security.filter.CustomAuthenticationFilter;
+import com.laze.backend.security.filter.MenuAccessControlFilter;
 import com.laze.backend.security.handler.CustomAuthenticationSuccessHandler;
 import com.laze.backend.security.provider.CmpUserAuthenticationProvider;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
@@ -19,8 +21,12 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.AccessDeniedHandler;
+import org.springframework.security.web.access.intercept.AuthorizationFilter;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
@@ -43,12 +49,12 @@ public class SecurityConfig {
 
     private final CorsConfigurationSource corsConfigurationSource; // CORS 설정 Bean
     private final CustomAuthenticationSuccessHandler customAuthenticationSuccessHandler; // 로그인 성공 핸들러
-    // private final CustomUserDetailsService customUserDetailsService; ☑️ 삭제 고려
     private final CmpUserAuthenticationProvider cmpUserAuthenticationProvider; // 커스텀 Provider Bean 주입
     private final AuthenticationConfiguration authenticationConfiguration; // AuthenticationManager 얻기 위함
+    private final ObjectMapper objectMapper; // <<< ObjectMapper 주입 추가
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http, CorsConfigurationSource corsConfigurationSource) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http, CorsConfigurationSource corsConfigurationSource, MenuAccessControlFilter menuAccessControlFilter) throws Exception {
 
         // CsrfTokenRequestAttributeHandler 생성 (Spring Security 6.x에서 권장)
         CsrfTokenRequestAttributeHandler requestHandler = new CsrfTokenRequestAttributeHandler();
@@ -68,27 +74,32 @@ public class SecurityConfig {
             )
             .authorizeHttpRequests(authz -> authz
                 .requestMatchers("/", "/error", "/api/user/login", "/api/user/csrf").permitAll()
+                .requestMatchers("/api/menus").authenticated()
                 .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
                 .anyRequest().authenticated() // 나머지 인증 필요
             )
+            .exceptionHandling(ex -> ex
+                .authenticationEntryPoint(authenticationEntryPoint()) // 401 Unauthorized 처리
+                .accessDeniedHandler(accessDeniedHandler())       // 403 Forbidden 처리
+            )
             .addFilterAt(customAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
+            .addFilterAfter(menuAccessControlFilter, AuthorizationFilter.class)
             .logout(logout -> logout
                 .logoutUrl("/api/user/logout")
                 .logoutSuccessHandler((request, response, authentication) -> {
                     response.setContentType("application/json");
                     response.setCharacterEncoding("UTF-8");
                     ApiResponse<Void> apiResponse = ApiResponse.ok();
-                    ObjectMapper objectMapper = new ObjectMapper();
                     objectMapper.writeValue(response.getWriter(), apiResponse);
                 })
                 .invalidateHttpSession(true)
                 .deleteCookies("JSESSIONID", "XSRF-TOKEN")
-//                .permitAll() ☑️ 제외 해도 되는지 확인
             )
             .sessionManagement(session -> session
                 .sessionFixation().changeSessionId()
-                .sessionCreationPolicy(SessionCreationPolicy.ALWAYS)
+                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                 .invalidSessionUrl("/login?expired=true")
+                .maximumSessions(1) // 동일 사용자는 하나의 세션만 허용
             )
             .authenticationProvider(cmpUserAuthenticationProvider);
 
@@ -145,6 +156,38 @@ public class SecurityConfig {
 
     }
 
+    // --- 인증/인가 실패 시 JSON 응답 처리를 위한 핸들러 Bean 추가 ---
+    @Bean
+    public AuthenticationEntryPoint authenticationEntryPoint() {
+        // 401 Unauthorized 에러 발생 시 호출될 핸들러
+        return (request, response, authException) -> {
+            log.warn("Authentication required: {}", authException.getMessage());
+            sendErrorResponse(response, HttpStatus.UNAUTHORIZED, "AUTH_REQUIRED", "인증이 필요합니다.", authException);
+        };
+    }
+
+    @Bean
+    public AccessDeniedHandler accessDeniedHandler() {
+        // 403 Forbidden 에러 발생 시 호출될 핸들러
+        return (request, response, accessDeniedException) -> {
+            log.warn("Access denied: {}", accessDeniedException.getMessage());
+            log.debug("Request details - method: {}, remote addr: {}, user: {}",
+                request.getMethod(), request.getRemoteAddr(),
+                SecurityContextHolder.getContext().getAuthentication().getName());
+            sendErrorResponse(response, HttpStatus.FORBIDDEN, "ACCESS_DENIED", "접근 권한이 없습니다.", accessDeniedException);
+        };
+    }
+
+    // --- 공통 에러 응답 전송 메소드 ---
+    private void sendErrorResponse(HttpServletResponse response, HttpStatus status, String code, String message, Exception exception) throws IOException {
+        response.setStatus(status.value());
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+        ApiResponse<Void> errorResponse = ApiResponse.fail(code, message);
+        // 주입받은 objectMapper 사용
+        objectMapper.writeValue(response.getWriter(), errorResponse);
+    }
+
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
@@ -167,5 +210,6 @@ public class SecurityConfig {
         tokenRepository.setCookiePath("/");
         return tokenRepository;
     }
+
 
 }

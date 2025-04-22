@@ -4,14 +4,18 @@
 
     <select id="findAccessibleMenus" resultType="com.laze.backend.menu.dto.MenuDto" parameterType="java.util.Collection">
         SELECT
-        MENU_ID         AS menuId,
-        MENU_NM         AS menuNm,
-        UPPER_MENU_ID   AS upperMenuId,
-        MENU_ORDR       AS menuOrdr,
-        MENU_LVL        AS menuLvl,
-        MENU_ICON       AS menuIcon
+        MENU_ID,
+        MENU_NM,
+        BIZ_DVCD,
+        HRN_MENU_ID,
+        MENU_LEV,
+        MENU_ORD,
+        SCR_ID,
+        MENU_MRK_YN,
+        MENU_ICON,
+        USE_YN
         FROM
-        TB_FW_MENU
+        FW_MENU
         WHERE
         USE_YN = 'Y'
         <if test="authorities != null and !authorities.isEmpty()">
@@ -25,7 +29,7 @@
             AND AUTH_CD IS NULL
         </if>
         ORDER BY
-        MENU_LVL ASC, MENU_ORDR ASC
+        MENU_LEV ASC, MENU_ORD ASC
     </select>
 
 </mapper>

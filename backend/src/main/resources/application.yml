@@ -1,5 +1,12 @@
 server:
   port: 9001
+  servlet:
+    session:
+      cookie:
+        name: JSESSIONID
+        http-only: true
+        secure: false
+        same-site: lax
 spring:
   application:
     name: web-framework-backend

@@ -7,12 +7,16 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -35,6 +39,23 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
                                         Authentication authentication) throws IOException, ServletException {
+
+        // 세션 확인 및 로깅
+        HttpSession session = request.getSession(false);
+        String sessionId = session != null ? session.getId() : "No Session";
+        log.info("Login successful. Authentication Principal: {}, Session ID: {}",
+            authentication.getName(), sessionId);
+
+        // 세션이 없으면 생성 (명시적으로)
+        if (session == null) {
+            session = request.getSession(true);
+            log.info("Created new session with ID: {}", session.getId());
+        }
+
+        // SecurityContext를 세션에 명시적으로 저장 (핵심 수정 부분)
+        SecurityContext securityContext = SecurityContextHolder.getContext();
+        session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, securityContext);
+        log.info("SecurityContext saved to session. Authentication: {}", authentication.getName());
 
         log.info("Login successful. Authentication Principal: {}", authentication.getName());
 
