@@ -19,7 +19,7 @@ public class MenuController {
 
     private final MenuService menuService;
 
-    @Operation(summary = "내 메뉴 목록 조회", description = "현재 로그인된 사용자가 접근 가능한 메뉴 목록을 트리 구조로 조회합니다.")
+    @Operation(summary = "내 메뉴 목록 조회", description = "현재 로그인된 사용자가 접근 가능한 메뉴 목록을 트리 구조로 조회")
     @GetMapping
     @PreAuthorize("isAuthenticated()") // 최소한 인증된 사용자만 호출 가능하도록 설정
     public List<MenuDto> getMyMenus() {

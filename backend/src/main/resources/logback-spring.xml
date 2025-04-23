@@ -21,7 +21,7 @@
         <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
             <!-- 인코더 설정을 직접 지정 -->
             <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
-                <!-- 우리가 정의한 LOG_PATTERN 변수를 사용하도록 명시 -->
+                <!-- LOG_PATTERN 변수를 사용하도록 명시 -->
                 <pattern>${LOG_PATTERN}</pattern>
                 <charset>UTF-8</charset>
             </encoder>
@@ -32,7 +32,8 @@
         <!-- level: 출력할 로그 레벨 (TRACE > DEBUG > INFO > WARN > ERROR) -->
         <logger name="com.laze.backend" level="DEBUG" />
         <logger name="org.mybatis" level="TRACE" />
-        <!-- <logger name="jdbc.resultsettable" level="DEBUG" /> --> <!-- 필요시 주석 해제하면 SQL 쿼리 결과를 테이블 형태로 보여주는 라이브러리(log4jdbc-log4j2 같은 것 사용 시) 로그 출력 -->
+        <!-- 필요시 주석 해제하면 SQL 쿼리 결과를 테이블 형태로 보여주는 라이브러리(log4jdbc-log4j2 같은 것 사용 시) 로그 출력 -->
+        <logger name="jdbc.resultsettable" level="DEBUG" />
 
         <!-- ===== 루트 로거(Root Logger) 설정 ===== -->
         <root level="INFO"> <!-- 기본 로그 레벨은 INFO -->
