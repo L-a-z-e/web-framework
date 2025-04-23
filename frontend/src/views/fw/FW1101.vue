@@ -77,15 +77,15 @@
                 <template #append><el-button :icon="Search" /></template>
               </el-input>
             </el-form-item>
-            <el-form-item label="메뉴레벨" prop="menuLvl">
-              <el-select v-model="detailForm.menuLvl" placeholder="선택">
+            <el-form-item label="메뉴레벨" prop="menuLev">
+              <el-select v-model="detailForm.menuLev" placeholder="선택">
                 <el-option label="1레벨" :value="1"></el-option>
                 <el-option label="2레벨" :value="2"></el-option>
                 <el-option label="3레벨" :value="3"></el-option>
               </el-select>
             </el-form-item>
-            <el-form-item label="메뉴순서" prop="menuOrdr">
-              <el-input-number v-model="detailForm.menuOrdr" :min="0" controls-position="right" />
+            <el-form-item label="메뉴순서" prop="menuOrd">
+              <el-input-number v-model="detailForm.menuOrd" :min="0" controls-position="right" />
             </el-form-item>
             <el-form-item label="메뉴아이콘" prop="menuIcon">
               <el-input v-model="detailForm.menuIcon" placeholder="Element Plus 아이콘 이름" />
@@ -142,8 +142,8 @@ const columnDefs = ref<ColDef[]>([
   { headerName: '메뉴ID', field: 'menuId', width: 120, sortable: true, filter: true, },
   { headerName: '메뉴명', field: 'menuNm', width: 200, sortable: true, filter: true },
   { headerName: '상위메뉴ID', field: 'hrnMenuId', width: 120 },
-  { headerName: '레벨', field: 'menuLvl', width: 80, filter: 'agNumberColumnFilter' },
-  { headerName: '순서', field: 'menuOrdr', width: 80, sortable: true },
+  { headerName: '레벨', field: 'menuLev', width: 80, filter: 'agNumberColumnFilter' },
+  { headerName: '순서', field: 'menuOrd', width: 80, sortable: true },
   { headerName: '아이콘', field: 'menuIcon', width: 120 },
   { headerName: '사용여부', field: 'useYn', width: 90, cellRenderer: (params: any) => params.value === 'Y' ? '예' : '아니오', filter: true },
   { headerName: '필요권한', field: 'authCd', width: 150, filter: true },
@@ -173,8 +173,8 @@ const handleSearch = async (params?: Record<string, any>) => {
     // gridData.value = response.data;
     // --- !!! 임시 데이터 타입 확인 (MenuInfo 에 맞게) !!! ---
     gridData.value = [
-      { menuId: '/menus', menuNm: '메뉴 관리', hrnMenuId: '#system_group', menuOrdr: 1, menuLvl: 2, menuIcon: null, useYn: 'Y', authCd: 'ROLE_ADMIN', bizDvcd: "FW"}, // <<< OK: MenuInfo 타입 가정
-      { menuId: '/sample', menuNm: '샘플', hrnMenuId: null, menuOrdr: 2, menuLvl: 1, menuIcon: 'Document', useYn: 'Y', authCd: 'ROLE_USER', bizDvcd: "FW"}, // <<< OK: MenuInfo 타입 가정
+      { menuId: '/menus', menuNm: '메뉴 관리', hrnMenuId: '#system_group', menuOrd: 1, menuLev: 2, menuIcon: null, useYn: 'Y', authCd: 'ROLE_ADMIN', bizDvcd: "FW"}, // <<< OK: MenuInfo 타입 가정
+      { menuId: '/sample', menuNm: '샘플', hrnMenuId: null, menuOrd: 2, menuLev: 1, menuIcon: 'Document', useYn: 'Y', authCd: 'ROLE_USER', bizDvcd: "FW"}, // <<< OK: MenuInfo 타입 가정
     ];
     // --- OK: 그리드 선택 초기화 ---
     gridApi.value?.deselectAll(); // AG Grid API 사용
