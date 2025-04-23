@@ -1,9 +1,11 @@
-// src/store/auth.ts
 import { ref, computed } from 'vue';
 import apiClient from '@/services/api.ts';
 import { defineStore } from 'pinia';
 import type { UserInfo } from "@/types/user.ts";
 import api from "@/services/api.ts";
+import {useMenuStore, useTagsViewStore} from "@/store";
+import {getMeApi, logoutApi} from "@/services/auth.ts";
+import router from "@/router";
 
 export const useAuthStore = defineStore('auth', () => {
     // === State ===
@@ -29,13 +31,15 @@ export const useAuthStore = defineStore('auth', () => {
     // 회사 코드
     const cmpCd = computed<string | null>(() => userInfo.value?.cmpCd || null);
     // 권한 목록 (GrantedAuthority 객체에서 실제 권한 문자열만 추출)
-    const authorities = computed(() => userInfo.value?.authorities?.map(auth => auth.authority) || []);
+    const authorities = computed<string[]>(() => {
+      return userInfo.value?.authorities || [];
+    });
 
     function hasRole(role: string): boolean {
-      // 'ROLE_' 접두사 자동 추가 또는 확인 로직 포함 가능
-      const roleName = role.startsWith('ROLE_') ? role : `ROLE_${role}`;
-      return authorities.value.includes(roleName);
+      const roleToCheck = role.startsWith('ROLE_') ? role : `ROLE_${role}`;
+      return authorities.value.includes(roleToCheck);
     }
+
     function hasAuthority(authority: string): boolean {
       return authorities.value.includes(authority);
     }
@@ -68,16 +72,20 @@ export const useAuthStore = defineStore('auth', () => {
       isLoading.value = true;
       try {
         // GET /api/user/me 호출 (Axios 제네릭으로 UserInfo 타입 명시)
-        const response = await apiClient.get<UserInfo>('/api/user/me');
+        const response = await getMeApi();
 
         // --- !!! 수정된 부분: Wrapper 적용 기준으로 응답 처리 !!! ---
         // 성공 응답(200 OK)이고 응답 데이터(UserInfo)가 있으면 성공
-        if (response.status === 200 && response.data) {
+        if (response.success && response.data) {
           setUserInfo(response.data); // 스토어에 사용자 정보 설정
+          // menuStore
+          const menuStore = useMenuStore();
+          await menuStore.fetchMenus();
+
           console.log('Login status checked and user info set:', (userInfo.value as UserInfo | null)?.empId);
           return true; // 로그인 상태 true 반환
         } else {
-          // API 호출은 성공했으나 데이터가 없는 비정상 상황 (거의 발생 안 함)
+          // API 호출은 성공했으나 데이터가 없는 비정상 상황
           console.warn('checkLoginStatus: Received successful response but no user data.');
           await logout(); // 로그아웃 처리
           return false;
@@ -98,44 +106,26 @@ export const useAuthStore = defineStore('auth', () => {
      * 스토어 상태를 초기화하고, 백엔드 로그아웃 API 를 호출합니다.
      */
     async function logout() {
+      const tagsViewStore = useTagsViewStore(); // <<< 스토어 인스턴스 가져오기
+
       try {
-        // 로그아웃 요청 전 CSRF 토큰 확인 (디버깅용)
-        const csrfToken = document.cookie.split(';')
-          .map(c => c.trim())
-          .find(c => c.startsWith('XSRF-TOKEN='));
-        console.log('로그아웃 요청 시 CSRF 쿠키:', csrfToken);
-
-        // 로그아웃 API 호출
-        const response = await api.post('/api/user/logout');
-        console.log('로그아웃 성공:', response.data);
-
-        // 상태 초기화 및 리디렉션 (기존 코드 유지)
-        setUserInfo(null);
-
-        return true;
+        await logoutApi(); // 백엔드 로그아웃 호출
       } catch (error) {
-        console.error('로그아웃 도중 오류 발생:', error);
-
-        // 실패해도 클라이언트 측에서는 로그아웃 처리
+        console.error('Error during backend logout:', error);
+      } finally {
+        // --- !!! 성공/실패 관계없이 클라이언트 상태 초기화 !!! ---
         setUserInfo(null);
-        return false;
-      }
 
-      // console.log('Performing logout action...');
-      // setUserInfo(null); // 스토어의 사용자 정보 제거
-      // localStorage.removeItem('tempLoggedIn'); // 임시 로그인 상태 제거
-      //
-      // try {
-      //   // TODO: 백엔드 로그아웃 API 호출 ('/logout' POST)
-      //   await api.post('/api/user/logout');
-      //   console.warn('logout(): Backend API call not implemented yet.');
-      // } catch (error) {
-      //   console.error('Error during backend logout:', error);
-      //   // 에러가 발생해도 프론트엔드 상태는 초기화된 상태 유지
-      // }
+        // --- !!! TagsView 초기화 호출 !!! ---
+        tagsViewStore.clearViews(); // <<< 이 부분 추가!
+
+        // 로그인 페이지로 이동
+        router.replace('/login').catch(err => {
+          console.error('Error redirecting to login after logout:', err);
+        });
+      }
     }
 
-    // 스토어에서 외부로 노출할 상태, getter, action 반환
     return {
       // State
       userInfo,

@@ -1,5 +1,7 @@
-import api from './api';
+import api, {getApi, postApi} from './api';
 import type { AxiosResponse } from 'axios';
+import type {UserInfo} from "@/types/user.ts";
+import type {ApiResponse} from "@/types/api.ts";
 
 interface LoginCredentials {
   cmpCd?: string;
@@ -28,11 +30,11 @@ export const loginApi = (credentials: LoginCredentials): Promise<AxiosResponse> 
 };
 
 // 로그아웃 API 호출 함수
-export const logoutApi = (): Promise<AxiosResponse> => {
-  return api.post('/api/user/logout');// CSRF 활성화 시 토큰 필요할 수 있음
+export const logoutApi = (): Promise<ApiResponse<void>> => {
+  return postApi<void>('/api/user/logout');// CSRF 활성화 시 토큰 필요할 수 있음
 };
 
 // 현재 사용자 정보 조회 API 호출 함수
-export const getMeApi = (): Promise<AxiosResponse> => {
-  return api.get('e');
+export const getMeApi = (): Promise<ApiResponse<UserInfo>> => {
+  return getApi<UserInfo>('/api/user/me');
 };

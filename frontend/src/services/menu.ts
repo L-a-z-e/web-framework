@@ -1,4 +1,4 @@
-import apiClient from './api';
+import apiClient, {getApi} from './api';
 import type { MenuInfo } from '@/types/menu';
 import type { ApiResponse } from "@/types/api.ts";
 import axios from "axios";
@@ -10,9 +10,7 @@ import axios from "axios";
  */
 export const fetchMyMenusApi = async (): Promise<ApiResponse<MenuInfo[]>> => { // <<< 반환 타입을 ApiResponse 로 변경!
   try {
-    const response = await apiClient.get<ApiResponse<MenuInfo[]>>('/api/menus');
-
-    return response.data;
+    return await getApi<MenuInfo[]>('/api/menus');
   } catch (error: any) {
     console.error('API call failed in fetchMyMenusApi:', error);
     if (axios.isAxiosError(error) && error.response?.data) {

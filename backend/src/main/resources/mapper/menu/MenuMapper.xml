@@ -65,37 +65,6 @@
         FROM menu_hierarchy
         ORDER BY MENU_LEV ASC, MENU_ORD ASC
 
-<!--        SELECT-->
-<!--        MENU_ID,-->
-<!--        MENU_NM,-->
-<!--        BIZ_DVCD,-->
-<!--        HRN_MENU_ID,-->
-<!--        MENU_LEV,-->
-<!--        MENU_ORD,-->
-<!--        SCR_ID,-->
-<!--        MENU_MRK_YN,-->
-<!--        MENU_ICON,-->
-<!--        USE_YN-->
-<!--        FROM-->
-<!--        FW_MENU-->
-<!--        WHERE-->
-<!--        USE_YN = 'Y'-->
-<!--        <if test="authorities != null and !authorities.isEmpty()">-->
-<!--            AND EXISTS (-->
-<!--            SELECT 1-->
-<!--            FROM FW_AUTH_MENU AM-->
-<!--            WHERE AM.MENU_ID = FW_MENU.MENU_ID-->
-<!--            AND AM.AUTH_GRP_ID IN-->
-<!--            <foreach item="auth" collection="authorities" open="(" separator="," close=")">-->
-<!--                #{auth}-->
-<!--            </foreach>-->
-<!--            )-->
-<!--        </if>-->
-<!--&lt;!&ndash;        <if test="authorities == null or authorities.isEmpty()">&ndash;&gt;-->
-<!--&lt;!&ndash;            AND AUTH_CD IS NULL&ndash;&gt;-->
-<!--&lt;!&ndash;        </if>&ndash;&gt;-->
-<!--        ORDER BY-->
-<!--        MENU_LEV ASC, MENU_ORD ASC-->
     </select>
 
 </mapper>

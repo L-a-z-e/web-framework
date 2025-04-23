@@ -52,11 +52,13 @@ import { useRouter } from 'vue-router';
 import { ElCard, ElForm, ElFormItem, ElInput, ElButton, ElAlert, type FormInstance, type FormRules } from 'element-plus';
 import { User, Lock, OfficeBuilding } from '@element-plus/icons-vue';
 import { useAuthStore } from '@/store';
+import { useMenuStore } from '@/store';
 import { loginApi, getMeApi } from '@/services/auth';
 import type {UserInfo} from "@/types/user.ts";
 
 const router = useRouter();
 const authStore = useAuthStore();
+const menuStore = useMenuStore();
 
 const loginFormRef = ref<FormInstance>();
 const loginForm = reactive({
@@ -89,26 +91,23 @@ const handleLogin = async () => {
 
   try {
     // 1. 로그인 요청 보내기
-    const loginResponse = await loginApi(loginForm); // POST /perform_login
+    const responsedata = await loginApi(loginForm); // <<< loginApi 호출
+    const response = responsedata.data;
 
-    // 2. 로그인 성공 여부 확인 (200 OK 및 success 필드 확인)
-    if (loginResponse.status === 200 && loginResponse.data?.success && loginResponse.data?.data) {
-      // --- 로그인 성공 처리 ---
-      const userInfo: UserInfo = loginResponse.data.data; // ApiResponse 의 data 필드 사용
-      authStore.setUserInfo(userInfo); // 스토어에 사용자 정보 저장
-      localStorage.setItem('tempLoggedIn', 'true'); // 임시
-      router.push('/'); // 대시보드 이동
-    } else {
-      // 로그인 실패 (API 응답에서 success: false 또는 data 없음)
-      throw new Error(loginResponse.data?.message || '로그인 정보가 올바르지 않습니다.');
-    }
+    // 2. 성공 처리 (HTTP 200 OK 가정, 인터셉터에서 success:false 는 에러로 처리됨)
+    const userInfo: UserInfo = response.data;
+    authStore.setUserInfo(userInfo); // 스토어에 사용자 정보 저장
+
+    await menuStore.fetchMenus();      // 메뉴 정보 로드
+    router.push('/');                 // 대시보드 이동
 
   } catch (error: any) {
-    // Axios 오류 또는 위에서 던진 에러 처리
+    // 3. 실패 처리 (Axios 오류 또는 인터셉터에서 reject 된 API 레벨 에러)
     console.error('Login process failed:', error);
-    // 서버에서 보낸 실패 응답 메시지 사용 시도
-    errorMessage.value = error.response?.data?.message || error.message || '로그인 처리 중 오류가 발생했습니다.';
-    await authStore.logout();
+    // 인터셉터에서 reject 시 error 객체에 code 와 message 가 포함될 수 있음
+    errorMessage.value = error?.response?.data?.message // 서버가 보낸 에러 메시지 우선 사용
+      || error?.message                 // 인터셉터/Axios 에러 메시지
+      || '로그인 처리 중 오류가 발생했습니다.'; // 기본 메시지
   } finally {
     loading.value = false;
   }

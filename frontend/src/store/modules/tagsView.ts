@@ -14,25 +14,70 @@ export const useTagsViewStore = defineStore('tagsView', () => {
     // 예시: 고정 탭 목록 getter
     const affixTags = computed(() => visitedViews.value.filter(v => v.meta?.affix));
 
+    // helper 함수 추가
+    /**
+     * 해당 뷰가 대시보드인지 확인
+     * @param view TagView 객체
+     * @returns 대시보드 여부
+     */
+    function isDashboard(view: TagView): boolean {
+      // 경로가 '/dashboard' 이거나 라우트 이름이 'Dashboard' 인 경우
+      return view.path === '/dashboard' || (typeof view.name === 'string' && view.name.toLowerCase() === 'dashboard');
+    }
+
+    /**
+     * 해당 뷰가 고정 탭인지 확인 (meta.affix 사용)
+     * @param view TagView 객체
+     * @returns 고정 탭 여부
+     */
+    function isAffix(view: TagView): boolean {
+      return view.meta?.affix === true;
+    }
+
+    /**
+     * 해당 뷰가 닫기 가능한지 확인 (대시보드 아니고 고정 탭 아님)
+     * @param view TagView 객체
+     * @returns 닫기 가능 여부
+     */
+    function isTabClosable(view: TagView): boolean {
+      return !isDashboard(view) && !isAffix(view);
+    }
+
     // === Actions (일반 함수로 정의) ===
     function addView(view: RouteLocationNormalized) {
+
       addVisitedView(view);
       addCachedView(view);
     }
 
     function addVisitedView(view: RouteLocationNormalized) {
+
       // meta.hidden 속성이 있다면 추가하지 않음
-      if (view.meta?.hidden) {
+      if (!view.name || !view.meta || view.meta.hidden) {
         return;
       }
-      // .value 를 통해 상태 접근
-      if (visitedViews.value.some(v => v.fullPath === view.fullPath)) return;
 
-      const title = view.meta.title ? String(view.meta.title) : 'No Title';
-      const newView: TagView = {
-        ...view,
-        title: title};
-      visitedViews.value.push(newView);
+      // title 속성이 없거나 빈 문자열이면 탭을 추가하지 않음
+      if (!view.meta.title || String(view.meta.title).trim() === '') {
+        return; // <<< title 없으면 여기서 함수 종료
+      }
+      // .value 를 통해 상태 접근
+      if (visitedViews.value.some(v => v.path === view.path)) {
+        // 이미 존재하면 업데이트만 시도할 수 있음 (updateVisitedView 호출)
+        updateVisitedView(view); // <<< 파라미터/쿼리 변경 시 정보 업데이트
+        return;
+      }
+
+      const title = String(view.meta.title);
+      const newTagView: TagView = {
+        fullPath: view.fullPath, // fullPath는 최신 정보로 저장해둠 (탭 클릭 시 이동용)
+        path: view.path,         // path는 탭 식별 기준
+        name: view.name,
+        title: title,
+        meta: { ...view.meta, title: title }
+      };
+
+      visitedViews.value.push(newTagView);
     }
 
     function addCachedView(view: RouteLocationNormalized) {
@@ -46,15 +91,25 @@ export const useTagsViewStore = defineStore('tagsView', () => {
     }
 
     function delView(view: TagView) {
-      return new Promise<void>(resolve => { // 반환 타입 명시 (Promise<void> 또는 다른 필요한 타입)
+      return new Promise<{ visitedViews: TagView[], cachedViews: string[] }>(resolve => {
+        if (!isTabClosable(view)) {
+          resolve({ visitedViews: [...visitedViews.value], cachedViews: [...cachedViews.value] }); // 변경 없음 반환
+          return;
+        }
         delVisitedView(view);
         delCachedView(view);
-        resolve(); // 액션 자체에서 반환할 값이 없다면 void Promise
+        resolve({
+          visitedViews: [...visitedViews.value],
+          cachedViews: [...cachedViews.value]
+        });
       });
     }
 
     function delVisitedView(view: TagView) {
-      const index = visitedViews.value.findIndex(v => v.fullPath === view.fullPath);
+      if (!isTabClosable(view)) {
+        return;
+      }
+      const index = visitedViews.value.findIndex(v => v.path === view.path);
       if (index > -1) visitedViews.value.splice(index, 1);
     }
 
@@ -66,69 +121,138 @@ export const useTagsViewStore = defineStore('tagsView', () => {
     }
 
     function delOthersViews(view: TagView) {
-      return new Promise<void>(resolve => {
-        // .value 를 사용하여 상태 업데이트
-        visitedViews.value = visitedViews.value.filter(v => v.meta?.affix || v.fullPath === view.fullPath);
-        cachedViews.value = visitedViews.value
-          .filter(v => v.name && !v.meta?.noCache)
-          .map(v => v.name as string);
-        resolve();
+      return new Promise<{ visitedViews: TagView[], cachedViews: string[] }>(resolve => {
+        delOthersVisitedViews(view);
+        delOthersCachedViews(view);
+
+        resolve({
+          visitedViews: [...visitedViews.value],
+          cachedViews: [...cachedViews.value]
+        });
       });
+    }
+
+    function delOthersVisitedViews(view: TagView) {
+      // 고정(affix) 또는 현재(view) 탭만 남김
+      visitedViews.value = visitedViews.value.filter(v => {
+        return isAffix(v) || v.path === view.path;
+      });
+    }
+
+    function delOthersCachedViews(view: TagView) {
+      // 남은 visitedViews 기준으로 cachedViews 재설정
+      cachedViews.value = visitedViews.value
+        .filter(v => v.name && !v.meta?.noCache)
+        .map(v => v.name as string);
     }
 
     function delAllViews() {
-      return new Promise<void>(resolve => {
-        // .value 사용
-        const affixTagsValue = affixTags.value; // computed 값 사용
-        visitedViews.value = affixTagsValue;
-        cachedViews.value = affixTagsValue
-          .filter(v => v.name && !v.meta?.noCache)
-          .map(v => v.name as string);
-        resolve();
+      // --- !!! Promise 반환 타입 수정 !!! ---
+      return new Promise<{ visitedViews: TagView[], cachedViews: string[] }>(resolve => {
+        delAllVisitedViews();
+        delAllCachedViews();
+        resolve({
+          visitedViews: [...visitedViews.value],
+          cachedViews: [...cachedViews.value]
+        });
       });
     }
 
-    function updateVisitedView(view: TagView) {
-      const index = visitedViews.value.findIndex(v => v.fullPath === view.fullPath);
+    function delAllVisitedViews() {
+      // --- affixTags computed 값을 사용 ---
+      const affixTagsValue = affixTags.value; // 고정 탭 목록 가져오기
+      visitedViews.value = [...affixTagsValue]; // 고정 탭만 남도록 visitedViews 업데이트
+
+    }
+
+    function delAllCachedViews() {
+      cachedViews.value = visitedViews.value
+        .filter(v => v.name && !v.meta?.noCache)
+        .map(v => v.name as string);
+    }
+
+    /**
+     * 이미 방문한 뷰의 정보를 업데이트합니다 (예: 제목 변경, 파라미터 변경 등).
+     * @param view 업데이트할 정보가 담긴 RouteLocationNormalized 객체
+     */
+    function updateVisitedView(view: RouteLocationNormalized) { // <<< 파라미터 타입 명확화
+      const index = visitedViews.value.findIndex(v => v.path === view.path);
+
       if (index > -1) {
-        // 기존 뷰 객체와 새 뷰 객체를 병합하여 업데이트
-        visitedViews.value[index] = { ...visitedViews.value[index], ...view };
+        const targetView = visitedViews.value[index]; // 업데이트 대상 탭
+        const title = String(view.meta?.title || (typeof view.name === 'string' ? view.name : view.path)); // title 재계산
+
+        const updatedView: TagView = {
+          fullPath: view.fullPath, // 최신 fullPath 로 업데이트
+          path: view.path,         // path 는 동일
+          name: view.name,         // 최신 name 사용
+          title: title,            // 계산된 title 사용
+          meta: view.meta ? { ...view.meta, title: title } : targetView.meta // 최신 meta 사용 (title 포함)
+        };
+
+        visitedViews.value[index] = updatedView;
+
+      } else {
+        addView(view);
       }
     }
 
     function clearViews() {
-      visitedViews.value = [];
-      cachedViews.value = [];
+      const affixTagsValue = affixTags.value;
+      visitedViews.value = [...affixTagsValue]; // 고정 탭만 남김
+      cachedViews.value = affixTagsValue
+        .filter(v => v.name && !v.meta?.noCache)
+        .map(v => v.name as string); // 고정 탭 캐시만 남김
     }
 
-    function toLastView(currentView?: TagView) {
-      // .value 사용
+    function toLastView(closedView?: TagView) {
+      /**
+       * 탭이 닫힌 후, 이동해야 할 마지막 유효 뷰로 라우터를 이동시킵니다.
+       * @param closedView 닫힌 탭 정보 (선택적)
+       */
+      // visitedViews 에서 마지막 탭 가져오기
       const latestView = visitedViews.value.slice(-1)[0];
-      if (latestView && latestView.fullPath) {
-        router.push(latestView.fullPath);
+
+      // 1. 마지막 탭이 존재하고, 그 탭이 방금 닫힌 탭이 아니라면 그 탭으로 이동
+      if (latestView && latestView.fullPath && (!closedView || latestView.path !== closedView.path)) { // path 기준으로 비교
+        router.push(latestView.fullPath); // 이동은 fullPath 로
       } else {
-        const firstAffixTag = affixTags.value[0]; // computed 값 사용
+        // 2. 마지막 탭이 없거나, 그게 방금 닫힌 탭이라면:
+        //    a. 첫 번째 고정 탭으로 이동 시도
+        const firstAffixTag = affixTags.value[0];
         if (firstAffixTag && firstAffixTag.fullPath) {
           router.push(firstAffixTag.fullPath);
         } else {
-          router.push(currentView?.name === 'Dashboard' ? '/' : '/dashboard');
+          //    b. 고정 탭도 없다면 대시보드로 이동 (단, 현재 경로가 대시보드가 아닐 때만)
+          if (router.currentRoute.value.path !== '/dashboard') {
+            router.push('/dashboard');
+          }
         }
       }
     }
 
-    // (선택적) 고정 탭 초기 추가 로직
+    /**
+     * 라우터 설정에서 고정(affix) 탭들을 찾아 초기화합니다.
+     * title 이 있는 고정 탭만 추가합니다.
+     * @param routes 전체 라우트 설정 배열 (readonly)
+     */
     function initAffixTags(routes: readonly RouteRecordRaw[]) {
-      const affixRouteTags = routes.filter(route => route.meta?.affix);
-      for (const tag of affixRouteTags) {
-        if (tag.name && !tag.meta?.hidden) { // 이름 있고 숨김 아닌 탭만
-          // 라우트 정보를 기반으로 TagView 객체 생성 (타입 캐스팅 주의)
+      const affixRouteTagsData = routes.filter(route => route.meta?.affix); // 고정 탭 필터링 (Optional Chaining 사용)
+
+      for (const tag of affixRouteTagsData) {
+        // --- !!! 변경 지점: title 존재 및 유효성 체크 추가 !!! ---
+        if (tag.name && !tag.meta?.hidden && tag.meta?.title && String(tag.meta.title).trim() !== '') {
+          // --------------------------------------------------
+          // 라우트 정보를 RouteLocationNormalized 와 유사하게 만듦 (addView 가 받도록)
           const dummyRoute = {
-            fullPath: tag.path,
+            fullPath: tag.path, // 간단히 path 로 설정 (파라미터 없는 고정 탭 가정)
             path: tag.path,
             name: tag.name,
             meta: tag.meta
-          } as RouteLocationNormalized; // 필요한 속성만 포함하여 타입 맞춤
-          addView(dummyRoute); // addView 호출하여 visited/cached 동시 처리
+            // params, query 등은 필요시 추가 가능하나 보통 고정 탭은 단순 경로
+          } as RouteLocationNormalized; // 타입 단언 사용
+          addView(dummyRoute); // addView 호출 (내부에서 title 체크는 스킵될 수 있음)
+        } else {
         }
       }
     }
@@ -149,9 +273,11 @@ export const useTagsViewStore = defineStore('tagsView', () => {
       clearViews,
       toLastView,
       initAffixTags,
-      // 개별 삭제 함수도 외부에서 필요하면 노출
       delVisitedView,
       delCachedView,
+      isDashboard,
+      isAffix,
+      isTabClosable
     };
   },
 // { // 스토어 옵션 (필요시)

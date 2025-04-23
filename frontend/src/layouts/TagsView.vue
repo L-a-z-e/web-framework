@@ -13,10 +13,10 @@
       <!-- 고정 탭은 닫기 버튼 비활성화 -->
       <el-tab-pane
         v-for="tag in visitedViews"
-        :key="tag.fullPath"
+        :key="tag.path"
         :label="tag.title"
-        :name="tag.fullPath"
-        :closable="!isAffix(tag)"
+        :name="tag.fullPath || tag.path"
+        :closable="!isTabClosable(tag)"
       >
       <!-- 우클릭 컨텍스트 메뉴를 위해 라벨 슬롯 사용 -->
       <template #label>
@@ -30,7 +30,7 @@
     <!-- 우클릭 컨텍스트 메뉴 (UI는 이전과 동일) -->
     <ul v-show="visible" :style="{ left: left + 'px', top: top + 'px' }" class="contextmenu">
       <li @click="refreshSelectedTag(selectedTag)">Refresh</li>
-      <li v-if="!isAffix(selectedTag)" @click="closeSelectedTag(selectedTag)">Close</li>
+      <li v-if="isTabClosable(selectedTag)" @click="closeSelectedTag(selectedTag)">Close</li>
       <li @click="closeOthersTags">Close Others</li>
       <li @click="closeAllTags(selectedTag)">Close All</li>
     </ul>
@@ -41,19 +41,28 @@
 import { ref, computed, watch, nextTick, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useTagsViewStore } from '@/store/modules/tagsView'; // TagsView 스토어
+import { useAuthStore } from "@/store";
 import type { TagView } from '@/types/tagsView';
-import { ElTabs, ElTabPane } from 'element-plus'; // ★ ElTabs, ElTabPane 임포트
-import type { TabsPaneContext } from 'element-plus'; // 타입 임포트
+import { ElTabs, ElTabPane } from 'element-plus'; // ElTabs, ElTabPane 임포트
+import type { TabsPaneContext } from 'element-plus';
+import {storeToRefs} from "pinia"; // 타입 임포트
 
 // 스토어, 라우터, 현재 라우트 인스턴스
 const store = useTagsViewStore();
+const authStore = useAuthStore();
 const router = useRouter();
 const route = useRoute();
 
-// 스토어에서 방문한 탭 목록 가져오기
-const visitedViews = computed(() => store.visitedViews);
+const { visitedViews, affixTags } = storeToRefs(store);
+const {
+  isDashboard, isAffix, isTabClosable, // 스토어 헬퍼 함수 사용
+  addView, updateVisitedView, // 추가/업데이트 함수
+  delView, delOthersViews, delAllViews, // 삭제 함수
+  delCachedView, // 새로고침 시 캐시 삭제용
+  clearViews, // <<< 로그아웃 시 사용 (이름 유지)
+  toLastView, initAffixTags // 이동 및 초기화
+} = store;
 
-// ElTabs와 연결될 현재 활성 탭의 식별자 (fullPath 사용)
 const activeTab = ref(route.fullPath);
 
 // --- 컨텍스트 메뉴 관련 상태 및 함수 (이전 구현과 대부분 동일) ---
@@ -61,9 +70,6 @@ const visible = ref(false);
 const top = ref(0);
 const left = ref(0);
 const selectedTag = ref<TagView>({});
-
-// 탭이 고정 탭인지 확인
-const isAffix = (tag: TagView): boolean => tag.meta?.affix === true;
 
 /**
  * ElTabs의 @tab-click 이벤트 핸들러. 탭 클릭 시 해당 경로로 라우터 이동.
@@ -78,38 +84,52 @@ const handleTabClick = (pane: TabsPaneContext) => {
 };
 
 /**
- * ElTabs의 @tab-remove 이벤트 핸들러. 탭 닫기 버튼 클릭 시 호출.
- * @param targetName 닫으려는 탭의 name (fullPath)
+ * ElTabs @tab-remove 핸들러 (또는 컨텍스트 메뉴의 Close)
  */
-const handleTabRemove = (targetName: string | number) => {
+const handleTabRemove = async (targetName: string | number) => {
   if (typeof targetName !== 'string') return;
-
   const targetView = visitedViews.value.find(view => view.fullPath === targetName);
   if (targetView) {
-    store.delView(targetView).then(() => {
-      // 닫힌 탭이 현재 활성 탭이었다면, 마지막 탭 또는 기본 경로로 이동
-      if (activeTab.value === targetName) {
-        store.toLastView(targetView);
+    const isCurrentTab = activeTab.value === targetName;
+
+    // 삭제 전에 이동할 경로 미리 찾기
+    let nextPath = '/dashboard';
+    if (isCurrentTab && visitedViews.value.length > 1) {
+      // 현재 탭의 인덱스 찾기
+      const index = visitedViews.value.findIndex(v => v.fullPath === targetName);
+      // 이전 탭이나 다음 탭 선택 (이전 탭 우선)
+      const nextView = index > 0
+        ? visitedViews.value[index - 1]
+        : visitedViews.value.find((_, i) => i !== index);
+
+      if (nextView) {
+        nextPath = (nextView.fullPath as string) || (nextView.path as string);
       }
-    });
+    }
+
+    // 탭 삭제
+    await delView(targetView);
+
+    // 현재 활성 탭이 삭제된 경우 명시적으로 라우터 이동 실행
+    if (isCurrentTab) {
+      await router.push(nextPath);
+      activeTab.value = nextPath; // 활성 탭도 명시적 업데이트
+    }
   }
 };
 
-// 컨텍스트 메뉴 열기 (위치 계산 로직은 이전과 동일)
+
+// 컨텍스트 메뉴 열기
 const openMenu = (tag: TagView, e: MouseEvent) => {
   const menuMinWidth = 105;
   const container = document.getElementById('tags-view-container');
   if (!container) return;
-  // 클릭된 span 요소의 위치를 기준으로 계산
   const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
   const containerRect = container.getBoundingClientRect();
-
-  let calculatedLeft = rect.left - containerRect.left + 5; // 라벨 시작점 기준
+  let calculatedLeft = rect.left - containerRect.left + 15;
   const maxLeft = container.clientWidth - menuMinWidth;
   if (calculatedLeft > maxLeft) calculatedLeft = maxLeft;
-
-  let calculatedTop = rect.bottom - containerRect.top + 5; // 라벨 하단 기준
-
+  let calculatedTop = rect.bottom - containerRect.top;
   left.value = calculatedLeft;
   top.value = calculatedTop;
   visible.value = true;
@@ -122,43 +142,50 @@ const closeMenu = () => { visible.value = false; };
 // 선택된 탭 새로고침 (keep-alive 캐시 제거 후 동일 경로 replace)
 const refreshSelectedTag = (view: TagView) => {
   if (!view.fullPath) return;
-  store.delCachedView(view); // 스토어에서 캐시 제거 액션 호출
+  // !!! 스토어의 delCachedView 호출 !!!
+  delCachedView(view);
   nextTick(() => {
-    // 현재 활성 탭이면 replace로, 아니면 push 후 다시 원래 탭으로?
-    // 일단 replace로 시도 (같은 경로 이동은 에러 발생 가능하나 무시)
-    router.replace({ path: view.fullPath }).catch(() => {});
+    // redirect 뷰 활용 권장
+    router.replace({ path: '/redirect' + view.fullPath }).catch(() => {});
   });
+  closeMenu();
 };
 
 // 컨텍스트 메뉴: Close (handleTabRemove 재사용)
 const closeSelectedTag = (view: TagView) => {
   handleTabRemove(view.fullPath || '');
+  closeMenu();
 };
 
 // 컨텍스트 메뉴: Close Others
 const closeOthersTags = () => {
   if (!selectedTag.value.fullPath) return;
-  router.push(selectedTag.value); // 선택된 탭으로 먼저 이동
-  store.delOthersViews(selectedTag.value); // 스토어 액션 직접 호출
+  router.push(selectedTag.value.fullPath);
+  delOthersViews(selectedTag.value);
+  closeMenu();
 };
 
 // 컨텍스트 메뉴: Close All
 const closeAllTags = (view: TagView) => {
-  store.delAllViews().then(() => {
-    store.toLastView(view); // 남은 탭(고정 탭) 또는 기본 경로로 이동
+  delAllViews().then(() => {
+    toLastView(view);
   });
+  closeMenu();
 };
 
 // --- Watchers ---
 
-// 라우트 변경 감지 -> ElTabs의 활성 탭 업데이트
-watch(() => route.fullPath, (newFullPath) => {
-  activeTab.value = newFullPath;
-  // ElTabs는 일반적으로 활성 탭을 자동으로 보이게 스크롤하지만,
-  // 필요하다면 여기서 ElTabs 인스턴스에 접근하여 수동 스크롤 로직 추가 가능
-});
+// 라우트 변경 감지
+watch(route, (toRoute) => {
+  if (toRoute.name) {
+    // addView 내부에서 중복 체크 및 업데이트 호출하도록 수정했음
+    addView(toRoute);
+  }
+  // 현재 활성 탭 업데이트
+  activeTab.value = toRoute.fullPath;
+}, { immediate: true });
 
-// 컨텍스트 메뉴 외부 클릭 시 닫기 (이전과 동일)
+// 컨텍스트 메뉴 외부 클릭 시 닫기
 watch(visible, (value) => {
   if (value) {
     document.body.addEventListener('click', closeMenu);
@@ -167,19 +194,33 @@ watch(visible, (value) => {
   }
 });
 
-// 스토어의 탭 목록 변경 시, 현재 활성 탭이 유효하지 않으면 이동 (안정성)
+// 스토어 탭 목록 변경 감지 (안정성)
 watch(visitedViews, (newViews) => {
-  if (newViews.length > 0 && !newViews.some(view => view.fullPath === activeTab.value)) {
-    store.toLastView(); // 마지막 유효 탭으로 이동
-  } else if (newViews.length === 0 && route.path !== '/dashboard') { // 탭이 모두 닫혔고 대시보드가 아니면
-    router.push('/dashboard'); // 예시: 대시보드로 이동
+  // 현재 활성 탭(activeTab)이 visitedViews 에 없으면 마지막 뷰로 이동
+  if (!newViews.some(view => view.fullPath === activeTab.value)) {
+    toLastView(); // 스토어의 toLastView 호출
+  } else if (newViews.length === 0 && route.path !== '/dashboard') {
+    // 탭이 모두 닫혔고 대시보드가 아니면 대시보드로 (스토어 로직과 일치 확인)
+    if (router.currentRoute.value.path !== '/dashboard') {
+      router.push('/dashboard');
+    }
   }
 }, { deep: true });
 
+// !!! 인증 상태 변화 감지 (로그아웃 시 탭 초기화) !!!
+watch(() => authStore.isLoggedIn, (isLoggedIn, wasLoggedIn) => {
+  console.log('Auth state changed:', wasLoggedIn, '->', isLoggedIn); // 로그 추가
+  if (wasLoggedIn && !isLoggedIn) {
+    clearViews(); // <<< 스토어의 clearViews 호출
+  }
+});
+// ------------------------------------------
 
 // --- Lifecycle Hooks ---
 onMounted(() => {
-  // 컴포넌트 마운트 시 현재 라우트 경로로 activeTab 초기화
+  // 컴포넌트 마운트 시 고정 탭 초기화
+  initAffixTags(router.getRoutes()); // <<< 스토어의 initAffixTags 호출
+  // 현재 라우트 activeTab 설정
   activeTab.value = route.fullPath;
 });
 
