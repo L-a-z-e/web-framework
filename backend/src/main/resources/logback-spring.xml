@@ -33,7 +33,14 @@
         <logger name="com.laze.backend" level="DEBUG" />
         <logger name="org.mybatis" level="TRACE" />
         <!-- 필요시 주석 해제하면 SQL 쿼리 결과를 테이블 형태로 보여주는 라이브러리(log4jdbc-log4j2 같은 것 사용 시) 로그 출력 -->
-        <logger name="jdbc.resultsettable" level="DEBUG" />
+        <!-- log4jdbc 로거 설정 -->
+        <logger name="jdbc.sqlonly" level="DEBUG" /> <!-- SQL문만 로깅 -->
+        <logger name="jdbc.sqltiming" level="INFO" /> <!-- SQL문과 실행 시간 로깅 -->
+        <logger name="jdbc.audit" level="WARN" /> <!-- ResultSet을 제외한 모든 JDBC 호출 정보 로깅 -->
+        <logger name="jdbc.resultset" level="WARN" /> <!-- ResultSet을 포함한 모든 JDBC 호출 정보 로깅 -->
+        <logger name="jdbc.resultsettable" level="INFO" /> <!-- SQL 결과를 테이블 형태로 로깅 -->
+        <logger name="jdbc.connection" level="WARN" /> <!-- 연결, 연결 해제 이벤트 로깅 -->
+
 
         <!-- ===== 루트 로거(Root Logger) 설정 ===== -->
         <root level="INFO"> <!-- 기본 로그 레벨은 INFO -->

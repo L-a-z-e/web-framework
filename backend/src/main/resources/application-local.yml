@@ -23,9 +23,16 @@ logging:
   level:
     com.laze.backend: DEBUG
     org.mybatis: TRACE
-    org.springframework.security: DEBUG
-    org.springframework.security.web.csrf: DEBUG
-    org.springframework.security.web.FilterChainProxy: DEBUG
+#    org.springframework.security: DEBUG
+#    org.springframework.security.web.csrf: DEBUG
+#    org.springframework.security.web.FilterChainProxy: DEBUG
+    jdbc.sqlonly: DEBUG
+    jdbc.sqltiming: INFO
+    jdbc.audit: WARN
+    jdbc.resultset: WARN
+    jdbc.resultsettable: INFO
+    jdbc.connection: WARN
+
 #    org.springframework.security.web.csrf: TRACE
 #    org.springframework.web: DEBUG # 웹 관련 로그도 보면 도움될 수 있음
 

@@ -14,6 +14,7 @@ dependencies {
     implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0" // ✅ BOM에서 버전 관리 안하므로 버전 명시
 //    implementation 'org.mapstruct:mapstruct' // ☑️ root에서 이미 버전관리 중이므로 제거 적절한지 확인
     implementation "net.logstash.logback:logstash-logback-encoder:8.0"
+    implementation 'org.bgee.log4jdbc-log4j2:log4jdbc-log4j2-jdbc4.1:1.16'
 
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
