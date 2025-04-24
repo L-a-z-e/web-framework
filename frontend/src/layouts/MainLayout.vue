@@ -6,13 +6,13 @@
       <TagsView/>
       <!-- Main Content Area -->
       <el-main class="layout-main">
-        <div class="main-content-wrapper">
+<!--        <div class="main-content-wrapper">-->
           <router-view v-slot="{ Component, route }">
             <keep-alive :include="cachedViews">
               <component :is="Component" :key="route.fullPath" />
             </keep-alive>
           </router-view>
-        </div>
+<!--        </div>-->
       </el-main>
       <el-footer class="layout-footer">
         web-framework {{ new Date().getFullYear() }}
@@ -22,61 +22,68 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-// 분리된 레이아웃 컴포넌트 임포트
+import {ref, computed, onMounted} from 'vue';
 import Header from '@/layouts/Header.vue';
 import Sidebar from '@/layouts/Sidebar.vue';
-// MainLayout 에서 직접 사용하는 Element Plus 컴포넌트
 import { ElContainer, ElMain, ElFooter } from 'element-plus';
 import TagsView from "@/layouts/TagsView.vue";
 
 import { useTagsViewStore } from "@/store";
+import {themeManager} from "@/themeManager.ts";
 
-// 사이드바 접힘/펼침 상태 관리
+// 사이드바 collapsed
 const isCollapsed = ref(false);
 
-// KeepAlive 로 캐시할 컴포넌트 이름 목록 (컴포넌트의 name 옵션과 일치해야 함)
-// TODO: 실제로는 Pinia 스토어 등에서 동적으로 관리
 const tagsViewStore = useTagsViewStore();
 const cachedViews = computed(() => tagsViewStore.cachedViews);
 
-// Header 컴포넌트에서 발생시킨 이벤트를 받아 상태 변경
 function toggleSidebar() {
   isCollapsed.value = !isCollapsed.value;
 }
+
+onMounted(() => {
+  themeManager.initTheme();
+})
 </script>
 
 <style scoped>
 .main-layout {
   height: 100vh;
-  background-color: #f0f2f5;
+  width: 100vw;
+  overflow: hidden;
 }
 
 .main-container {
   display: flex;
   flex-direction: column;
+  width: 100%;
   height: 100%;
-  flex-grow: 1;
+  overflow: hidden;
+  background-color: var(--app-bg-color, #f0f2f5);
 }
 
 .layout-main {
-  background-color: #f0f2f5;
-  padding: 15px;
-  height: calc(100vh - 50px - 34px - 30px); /* 높이 계산 확인! */
-  overflow-y: auto;
+  padding: 0; /* 패딩 없음 */
+  overflow-x: hidden; /* 가로 스크롤 방지 */
+  overflow-y: auto; /* 세로 스크롤 */
+  height: calc(100vh - var(--header-height) - var(--tagview-height) - var(--footer-height)); /* 높이 계산 유지 */
+  background-color: transparent; /* 배경색 제거 (app-page 에서 관리) */
 }
-
-.main-content-wrapper {
-  background-color: #ffffff;
-}
+/*.main-content-wrapper {
+//  height: 100%;
+//  width: 100%;
+//} */
 
 .layout-footer {
-  height: 30px;
-  line-height: 30px;
   text-align: center;
   font-size: 12px;
-  color: #909399;
-  background-color: #f0f2f5;
-  border-top: 1px solid #e6e6e6;
+  color: var(--footer-text-color, #909399);
+  border-top: 1px solid var(--app-border-color, #e4e7ed);
+  background-color: var(--footer-bg-color, #ffffff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  height: 30px;
 }
 </style>

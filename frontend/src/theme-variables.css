@@ -1,0 +1,435 @@
+:root {
+  /* 기본 컬러 팔레트 (라이트 테마) */
+  --app-bg-color: #f5f7f9;
+  --app-content-bg-color: #ffffff;
+  --app-border-color: #e4e7ed;
+  --app-text-color: #303133;
+  --app-text-light-color: #606266;
+
+  /* 헤더 변수 */
+  --header-bg-color: #ffffff;
+  --header-text-color: #303133;
+  --header-border-color: #e4e7ed;
+  --header-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
+  --header-height: 50px;
+
+  /* 사이드바 변수 */
+  --sidebar-bg-color: #304156;
+  --sidebar-text-color: #bfcbd9;
+  --sidebar-active-bg: #263445;
+  --sidebar-hover-bg: #263445;
+  --sidebar-logo-bg: #2b2f3a;
+  --sidebar-logo-text: #ffffff;
+  --sidebar-width: 210px;
+  --sidebar-collapsed-width: 64px;
+
+  /* 푸터 변수 */
+  --footer-bg-color: #ffffff;
+  --footer-text-color: #909399;
+  --footer-height: 30px;
+
+  /* 태그뷰 변수 */
+  --tagview-bg-color: #ffffff;
+  --tagview-text-color: #495060;
+  --tagview-active-bg: #42b983;
+  --tagview-active-text: #ffffff;
+  --tagview-height: 40px;
+
+  /* 카드 스타일 */
+  --card-bg-color: #ffffff;
+  --card-border-color: #ebeef5;
+  --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  --card-header-border: 1px solid #ebeef5;
+
+  /* 폼 & 컨트롤 */
+  --form-bg-color: #ffffff;
+  --form-disabled-bg: #f5f7fa;
+  --form-disabled-text: #c0c4cc;
+
+  /* 버튼 스타일 */
+  --button-primary-color: #409eff;
+  --button-primary-hover: #66b1ff;
+  --button-success-color: #67c23a;
+  --button-danger-color: #f56c6c;
+  --button-text-color: #ffffff;
+
+  /* 그리드 스타일 */
+  --grid-header-bg: #f5f7fa;
+  --grid-header-text: #606266;
+  --grid-row-hover: #f5f7fa;
+  --grid-row-selected: #e6f1fc;
+
+  /* 간격 & 크기 */
+  --main-padding: 16px;
+  --card-padding: 15px;
+  --form-gap: 15px;
+  --toolbar-margin: 12px;
+
+  /* Z-인덱스 레이어 */
+  --z-dropdown: 100;
+  --z-modal: 200;
+  --z-tooltip: 300;
+
+  /* 아이콘 */
+  --icon-color: #515a6e;
+
+  /* 검색 영역 */
+  --search-form-height: 80px;
+}
+
+/* 다크 테마 변수 */
+html.dark {
+  /* === 기본 팔레트 === */
+  /* 아주 어두운 회색 배경 (완전 검정 X) */
+  --app-bg-color: #121212;
+  /* 배경보다 약간 밝은 콘텐츠/카드 배경 */
+  --app-content-bg-color: #1e1e1e; /* 또는 #212121 */
+  /* 구분선/테두리 색상 (배경보다 약간 밝게) */
+  --app-border-color: #3a3a3a; /* 또는 #424242 */
+  /* 기본 텍스트 (완전 흰색보다 약간 어둡게) */
+  --app-text-color: #e0e0e0;
+  /* 보조 텍스트 (기본 텍스트보다 약간 더 어둡게) */
+  --app-text-light-color: #a0a0a0; /* 또는 #b3b3b3 */
+
+  /* === 헤더 === */
+  --header-bg-color: var(--app-content-bg-color); /* 콘텐츠 배경과 동일하게 */
+  --header-text-color: var(--app-text-color);
+  --header-border-color: var(--app-border-color);
+  --header-shadow: 0 1px 4px rgba(0, 0, 0, 0.3); /* 그림자 약간 진하게 */
+
+  /* === 사이드바 === */
+  --sidebar-bg-color: #1e1e1e; /* 헤더/콘텐츠 배경과 맞춤 */
+  --sidebar-text-color: #a0a0a0; /* 보조 텍스트 색상 활용 */
+  --sidebar-active-bg: #333333; /* 약간 밝은 회색으로 활성 표시 */
+  --sidebar-hover-bg: #2a2a2a; /* 호버 시 약간 밝게 */
+  --sidebar-logo-bg: #121212; /* 앱 배경과 동일하게 또는 약간 다르게 */
+  --sidebar-logo-text: var(--app-text-color);
+
+  /* === 푸터 === */
+  --footer-bg-color: var(--app-content-bg-color);
+  --footer-text-color: var(--app-text-light-color);
+
+  /* === 태그뷰 === */
+  --tagview-bg-color: var(--app-content-bg-color);
+  --tagview-text-color: var(--app-text-light-color);
+  --tagview-active-bg: #0d47a1; /* 진한 파란색 */
+  --tagview-active-text: #e0e0e0;
+
+  /* === 카드 === */
+  --card-bg-color: var(--app-content-bg-color);
+  --card-border-color: var(--app-border-color);
+  --card-shadow: var(--header-shadow); /* 헤더 그림자 재활용 */
+  --card-header-border: 1px solid var(--app-border-color);
+
+  /* === 폼 & 컨트롤 === */
+  --form-bg-color: #2a2a2a;
+  --form-disabled-bg: #3a3a3a; /* 비활성 배경 */
+  --form-disabled-text: #757575; /* 비활성 텍스트 */
+
+  /* === 버튼 (기존 라이트 테마 색상 유지 또는 조정) === */
+  /* 다크모드에서는 채도를 약간 낮추거나 명도를 높인 색이 어울릴 수 있음 */
+  --button-primary-color: #409eff; /* 기존 유지 */
+  --button-primary-hover: #66b1ff; /* 기존 유지 */
+  /* --button-primary-color: #58a6ff;  대안 (GitHub 스타일) */
+  /* --button-primary-hover: #79b8ff; */
+  --button-success-color: #67c23a;
+  --button-danger-color: #f56c6c;
+  --button-text-color: #ffffff; /* 흰색 텍스트는 유지 */
+
+  /* === 그리드 === */
+  --grid-header-bg: #2a2a2a; /* 폼 배경과 유사하게 */
+  --grid-header-text: var(--app-text-color);
+  --grid-row-hover: #333333; /* 활성 사이드바 배경과 유사하게 */
+  --grid-row-selected: #0d47a1; /* 태그뷰 활성 배경과 유사하게 */
+
+  /* === 아이콘 === */
+  --icon-color: var(--app-text-light-color); /* 보조 텍스트 색상 활용 */
+
+  /* === Element Plus 다크 모드 변수 오버라이드 === */
+  /* 위에서 정의한 변수들을 사용하여 Element Plus 기본 스타일 조정 */
+  --el-color-primary: var(--button-primary-color);
+  --el-fill-color-blank: var(--app-content-bg-color); /* 카드/콘텐츠 배경 */
+  --el-bg-color: var(--app-content-bg-color);         /* 기본 배경 */
+  --el-bg-color-overlay: var(--app-content-bg-color); /* 오버레이 배경 */
+  --el-text-color-primary: var(--app-text-color);     /* 주 텍스트 */
+  --el-text-color-regular: var(--app-text-light-color);/* 보조 텍스트 */
+  --el-border-color: var(--app-border-color);         /* 기본 테두리 */
+  --el-border-color-light: var(--app-border-color);     /* 밝은 테두리 */
+  --el-border-color-extra-light: var(--app-border-color);/* 더 밝은 테두리 */
+  --el-fill-color: var(--form-bg-color);              /* 채우기 색상 (입력 필드 등) */
+  --el-fill-color-light: var(--grid-header-bg);       /* 밝은 채우기 (호버 등) */
+  --el-mask-color: rgba(0, 0, 0, 0.7);                /* 마스크 배경 */
+}
+
+/* 전역 리셋 & 기본 스타일 */
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 14px;
+  color: var(--app-text-color);
+  background-color: var(--app-bg-color);
+  overflow: hidden;
+}
+
+#app {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 레이아웃 컴포넌트 */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  background-color: var(--app-bg-color);
+}
+
+.app-content {
+  flex: 1;
+  overflow: hidden;
+  padding: var(--main-padding);
+  background-color: var(--app-content-bg-color);
+}
+
+.app-page {
+  height: 100%; /* 부모(.layout-main)의 높이를 100% 채움 */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* 페이지 자체 스크롤 방지 */
+  padding: var(--main-padding);
+  box-sizing: border-box;
+  background-color: var(--app-content-bg-color); /* 페이지 배경색 */
+  color: var(--app-text-color); /* 페이지 텍스트 색상 */
+}
+
+.app-page > .search-area, /* 검색 영역 */
+.app-page > .app-search-form {
+  flex-shrink: 0; margin-bottom: 20px;
+}
+
+.app-page > .el-row { /* 메인 콘텐츠 행 */
+  flex-grow: 1; min-height: 0;
+}
+
+/* 그리드 & 카드 레이아웃 */
+.app-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.app-col {
+  flex: 1;
+  min-width: 0; /* flex-shrink를 위해 필요 */
+}
+
+/* 카드 스타일 */
+.app-card {
+  background-color: var(--card-bg-color);
+  border-radius: 4px;
+  border: 1px solid var(--card-border-color);
+  box-shadow: var(--card-shadow);
+  margin-bottom: var(--form-gap);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--card-padding);
+  border-bottom: var(--card-header-border);
+}
+
+.app-card-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--app-text-color);
+  margin: 0;
+}
+
+.app-card-body {
+  padding: var(--card-padding);
+  flex: 1;
+  overflow: auto;
+}
+
+/* 툴바 스타일 */
+.app-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--toolbar-margin);
+  min-height: 40px;
+}
+
+.app-toolbar-left,
+.app-toolbar-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
+
+.app-toolbar-right {
+  display: flex;
+  gap: 8px;
+}
+
+/* 검색 폼 영역 */
+.app-search-form {
+  background-color: var(--card-bg-color);
+  border: 1px solid var(--card-border-color);
+  border-radius: 4px;
+  padding: var(--card-padding);
+  margin-bottom: 20px;
+}
+
+.app-search-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+/* AG-Grid 커스텀 스타일 */
+.app-grid-wrapper {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.app-grid-wrapper > .ag-theme-alpine {
+  flex-grow: 1; /* 툴바 제외 남은 공간 채우기 */
+  width: 100%;
+  min-height: 0;
+}
+
+.grid-toolbar {
+  flex-shrink: 0;
+}
+
+/* AG-Grid 테마 오버라이드 - 라이트 테마 */
+.ag-theme-alpine {
+  --ag-background-color: var(--card-bg-color);
+  --ag-header-background-color: var(--grid-header-bg);
+  --ag-header-foreground-color: var(--grid-header-text);
+  --ag-odd-row-background-color: var(--card-bg-color);
+  --ag-row-hover-color: var(--grid-row-hover);
+  --ag-selected-row-background-color: var(--grid-row-selected);
+  --ag-border-color: var(--app-border-color);
+  --ag-row-border-color: var(--app-border-color);
+  --ag-cell-horizontal-border: 1px solid var(--app-border-color);
+  --ag-font-size: 13px;
+}
+
+/* AG-Grid 테마 오버라이드 - 다크 테마 */
+.dark .ag-theme-alpine {
+  --ag-background-color: var(--card-bg-color);
+  --ag-header-background-color: var(--grid-header-bg);
+  --ag-header-foreground-color: var(--grid-header-text);
+  --ag-foreground-color: var(--app-text-color);
+  --ag-odd-row-background-color: var(--card-bg-color);
+  --ag-row-hover-color: var(--grid-row-hover);
+  --ag-selected-row-background-color: var(--grid-row-selected);
+  --ag-border-color: var(--app-border-color);
+  --ag-row-border-color: var(--app-border-color);
+}
+
+/* Element Plus 오버라이드 */
+.menu-management-page { /* 페이지 루트 */
+  height: 100%; display: flex; flex-direction: column; overflow: hidden;
+}
+.search-area { /* 검색 폼 */
+  flex-shrink: 0; /* 높이 고정 */
+}
+.el-row { /* 그리드/폼 행 */
+  flex-grow: 1; min-height: 0; /* 남은 공간 차지 */
+}
+.el-col { /* 그리드/폼 열 */
+  display: flex; flex-direction: column;
+}
+.el-card { /* 카드 */
+  flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; /* 열 내부 공간 채우기 */
+}
+.el-card__header { /* 카드 헤더 (있다면) */
+  flex-shrink: 0;
+}
+.el-card__body { /* 카드 본문 */
+  padding: var(--card-padding) !important; /* 카드 내부 패딩 */
+  flex-grow: 1;
+  min-height: 0;
+  overflow-y: auto !important; /* 카드 내용 넘치면 스크롤 */
+  display: flex; /* 내부 요소(GridWrapper 등) 배치 위해 */
+  flex-direction: column;
+}
+
+.el-card {
+  border: 1px solid var(--card-border-color) !important;
+  background-color: var(--card-bg-color) !important;
+  box-shadow: var(--card-shadow) !important;
+  margin-bottom: 0 !important;
+  height: 100%;
+}
+
+.el-card__header {
+  padding: var(--card-padding) !important;
+  border-bottom: var(--card-header-border) !important;
+}
+
+.el-card__body {
+  padding: var(--card-padding) !important;
+  flex: 1;
+}
+
+/* 비활성화된 폼 요소 스타일 */
+.el-form.is-disabled .el-input__inner,
+.el-form.is-disabled .el-select__wrapper,
+.el-form.is-disabled .el-input-number,
+.el-form.is-disabled .el-textarea__inner {
+  background-color: var(--form-disabled-bg) !important;
+  color: var(--form-disabled-text) !important;
+}
+
+/* 테이블 & 그리드 높이 설정 */
+.flexible-height-grid {
+  height: calc(100vh - var(--header-height) - var(--search-form-height) - var(--main-padding) * 2 - 40px);
+}
+
+/* 반응형 그리드 레이아웃 */
+@media (max-width: 992px) {
+  .app-row {
+    flex-direction: column;
+  }
+}
+
+/* Element Plus 다크 모드 변수 오버라이드 */
+html.dark {
+  --el-color-primary: var(--button-primary-color);
+  --el-fill-color-blank: var(--card-bg-color);
+  --el-bg-color: var(--card-bg-color);
+  --el-bg-color-overlay: var(--card-bg-color);
+  --el-text-color-primary: var(--app-text-color);
+  --el-text-color-regular: var(--app-text-light-color);
+  --el-border-color: var(--app-border-color);
+  --el-border-color-light: var(--app-border-color);
+  --el-border-color-extra-light: var(--app-border-color);
+  --el-fill-color: var(--form-disabled-bg);
+  --el-fill-color-light: var(--grid-header-bg);
+  --el-mask-color: rgba(0, 0, 0, 0.7);
+}
+
+html, body, #app, .main-layout, .main-container {
+  overflow: hidden; /* 스크롤바 발생 방지 */
+}

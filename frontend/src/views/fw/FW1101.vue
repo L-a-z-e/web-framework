@@ -1,5 +1,5 @@
 <template>
-  <div class="menu-management-page">
+  <div class="app-page">
     <!-- 1. 검색 영역 -->
     <SearchForm
       :search-fields="searchFields"
@@ -19,20 +19,20 @@
             :columnDefs="columnDefs"
             :rowData="gridData"
             :height="'calc(100vh - 260px)'"
-          :pagination="true"
-          :paginationPageSize="10"
-          @grid-ready="onGridReady"
-          @row-selected="handleRowSelect"
-          class="ag-theme-alpine"
-          style="width: 100%;"
+            :pagination="true"
+            :paginationPageSize="10"
+            @grid-ready="onGridReady"
+            @row-selected="handleRowSelect"
+            class="ag-theme-alpine"
+            style="width: 100%;"
           >
-          <template #toolbar-left>
-            <span class="grid-title">[FW9110] 메뉴 목록</span>
-          </template>
-          <template #toolbar-right>
-            <el-button size="small" :icon="Download" @click="handleExcelExport">엑셀다운로드</el-button>
-            <el-button type="primary" size="small" :icon="Plus" @click="handleNew">신규 등록</el-button>
-          </template>
+            <template #toolbar-left>
+              <span class="grid-title">[FW1101] 메뉴 목록</span>
+            </template>
+            <template #toolbar-right>
+              <el-button size="small" :icon="Download" @click="handleExcelExport">엑셀다운로드</el-button>
+              <el-button type="primary" size="small" :icon="Plus" @click="handleNew">신규 등록</el-button>
+            </template>
           </Grid>
         </el-card>
       </el-col>
@@ -57,7 +57,7 @@
             :disabled="!isDetailEditable"
             size="small"
           >
-            <el-form-item label="업무구분" prop="bizDvcd"> <!-- Prop 이름 확인 필요 -->
+            <el-form-item label="업무구분" prop="bizDvcd">
               <el-select v-model="detailForm.bizDvcd" placeholder="선택">
                 <el-option label="프레임워크(FW)" value="FW"></el-option>
                 <el-option label="공통(CO)" value="CO"></el-option>
@@ -271,11 +271,19 @@ onMounted(() => {
 </script>
 <style scoped>
 .menu-management-page {
-  padding: 10px; /* 페이지 전체 여백 */
+  padding: var(--main-padding, 10px);
+  background-color: var(--app-content-bg-color, #ffffff);
+  color: var(--app-text-color, #303133);
+  height: 100%;
+  overflow: hidden; /* 페이지 전체 스크롤 방지 */
 }
 
 .search-area {
-  margin-bottom: 20px; /* 검색 영역 아래 간격 */
+  margin-bottom: 20px;
+  background-color: var(--card-bg-color, #ffffff);
+  border: 1px solid var(--card-border-color, #ebeef5);
+  border-radius: 4px;
+  box-shadow: var(--card-shadow, 0 1px 3px rgba(0, 0, 0, 0.05));
 }
 
 /* 카드 헤더 스타일 (그리드, 폼 공통) */
@@ -284,41 +292,54 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 15px; /* 툴바 아래 간격 */
-  padding-bottom: 10px; /* 툴바 아래 구분선 느낌 */
-  border-bottom: 1px solid #eee;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--card-border-color, #eee);
+  flex-shrink: 0;
 }
 
 .grid-title,
 .form-title {
   font-size: 16px;
   font-weight: bold;
+  color: var(--app-text-color, #303133);
 }
 
 .button-group .el-button {
   margin-left: 8px;
 }
 
-/* 상세 폼 너비 고정 (선택 사항) */
-/* .el-col:last-child .el-card {
-  min-width: 400px;
-} */
-
 /* 상세 폼 내부 아이템 간격 등 */
 .el-form--label-top .el-form-item {
-  margin-bottom: 15px;
+  margin-bottom: var(--form-gap, 15px);
 }
+
 .el-form .el-select,
 .el-form .el-input-number {
   width: 100%; /* Select, InputNumber 너비 100% */
 }
 
-/* 입력 비활성화 시 스타일 (더 명확하게) */
+/* 입력 비활성화 시 스타일 */
 .el-form.is-disabled :deep(.el-input__inner),
 .el-form.is-disabled :deep(.el-select__wrapper),
 .el-form.is-disabled :deep(.el-input-number),
 .el-form.is-disabled :deep(.el-textarea__inner) {
-  background-color: #f5f7fa;
+  background-color: var(--form-disabled-bg, #f5f7fa) !important;
+  color: var(--form-disabled-text, #c0c4cc) !important;
   cursor: not-allowed;
 }
+
+/* Element Plus 카드 오버라이드 스타일 */
+:deep(.el-card) {
+  background-color: var(--card-bg-color, #ffffff) !important;
+  border-color: var(--card-border-color, #ebeef5) !important;
+  box-shadow: var(--card-shadow, 0 1px 3px rgba(0, 0, 0, 0.05)) !important;
+  color: var(--app-text-color, #303133);
+}
+
+:deep(.el-card__body) {
+  padding: var(--card-padding, 15px) !important;
+}
+
+/* AG Grid 테마 오버라이드는 테마 변수에서 이미 처리됨 */
 </style>

@@ -6,6 +6,8 @@ import App from './App.vue'
 import router from './router'
 import pinia from "@/store"
 import { initializeCsrf } from "@/services/api"
+import {themeManager} from "./themeManager.ts";
+import './theme-variables.css'
 
 // AG-Grid 모듈 임포트 및 등록
 import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community'
@@ -24,6 +26,9 @@ if (window.performance && window.performance.navigation.type === 1) {
     window.location.replace('/');
   }
 }
+
+// 테마 초기화
+themeManager.initTheme()
 
 // 앱 생성 및 설정
 const app = createApp(App)

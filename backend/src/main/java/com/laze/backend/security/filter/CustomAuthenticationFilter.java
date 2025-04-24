@@ -54,7 +54,7 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
         username = (username != null) ? username.trim() : "";
         password = (password != null) ? password : "";
 
-        // 우리가 만든 CmpUserAuthenticationToken 객체 생성 (인증 전 상태)
+        // CmpUserAuthenticationToken 객체 생성 (인증 전 상태)
         CmpUserAuthenticationToken authRequest = new CmpUserAuthenticationToken(cmpCd, username, password);
 
         // 요청 상세 정보 설정 (IP 주소, 세션 ID 등) - 부모 클래스 기능 활용

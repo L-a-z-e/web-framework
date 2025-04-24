@@ -27,7 +27,7 @@
       </el-tab-pane>
     </el-tabs>
 
-    <!-- 우클릭 컨텍스트 메뉴 (UI는 이전과 동일) -->
+    <!-- 우클릭 컨텍스트 메뉴 -->
     <ul v-show="visible" :style="{ left: left + 'px', top: top + 'px' }" class="contextmenu">
       <li @click="refreshSelectedTag(selectedTag)">Refresh</li>
       <li v-if="isTabClosable(selectedTag)" @click="closeSelectedTag(selectedTag)">Close</li>
@@ -59,7 +59,7 @@ const {
   addView, updateVisitedView, // 추가/업데이트 함수
   delView, delOthersViews, delAllViews, // 삭제 함수
   delCachedView, // 새로고침 시 캐시 삭제용
-  clearViews, // <<< 로그아웃 시 사용 (이름 유지)
+  clearViews, // <<< 로그아웃 시 사용
   toLastView, initAffixTags // 이동 및 초기화
 } = store;
 
@@ -76,7 +76,6 @@ const selectedTag = ref<TagView>({});
  * @param pane 클릭된 탭의 컨텍스트 정보 (TabsPaneContext)
  */
 const handleTabClick = (pane: TabsPaneContext) => {
-  // pane.props.name 에 우리가 ElTabPane의 :name으로 설정한 fullPath가 들어옴
   const clickedFullPath = pane.props.name;
   if (typeof clickedFullPath === 'string' && clickedFullPath !== route.fullPath) {
     router.push(clickedFullPath); // 현재 경로와 다른 경우에만 이동
@@ -145,7 +144,6 @@ const refreshSelectedTag = (view: TagView) => {
   // !!! 스토어의 delCachedView 호출 !!!
   delCachedView(view);
   nextTick(() => {
-    // redirect 뷰 활용 권장
     router.replace({ path: '/redirect' + view.fullPath }).catch(() => {});
   });
   closeMenu();
@@ -178,7 +176,7 @@ const closeAllTags = (view: TagView) => {
 // 라우트 변경 감지
 watch(route, (toRoute) => {
   if (toRoute.name) {
-    // addView 내부에서 중복 체크 및 업데이트 호출하도록 수정했음
+    // addView 내부에서 중복 체크 및 업데이트 호출하도록 수정
     addView(toRoute);
   }
   // 현재 활성 탭 업데이트
@@ -229,12 +227,13 @@ onMounted(() => {
 <style scoped>
 /* TagsView 컨테이너 기본 스타일 */
 .tags-view-container {
-  height: 40px; /* ElTabs 높이에 맞춰 조정 (기본값 근사치) */
-  background-color: #fff;
-  padding: 0 10px; /* 좌우 여백 */
+  box-sizing: border-box !important;
+  height: var(--tagview-height);
+  background-color: var(--tagview-bg-color);
+  padding: 0 10px;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, .12), 0 0 3px 0 rgba(0, 0, 0, .04);
-  position: relative; /* 컨텍스트 메뉴 포지셔닝 기준 */
-  /* border-bottom: 1px solid var(--el-border-color-light); */ /* 필요시 하단 구분선 */
+  position: relative;
+  border-bottom: 1px solid var(--app-border-color);
 }
 
 /* ElTabs 컴포넌트 스타일 조정 */
@@ -242,72 +241,81 @@ onMounted(() => {
   height: 100%; /* 컨테이너 높이 채우기 */
 }
 
-/* Tabs 헤더 영역 (탭들이 있는 곳) */
+/* Tabs 헤더 영역 */
 :deep(.el-tabs__header) {
   margin: 0; /* 기본 마진 제거 */
   border-bottom: none; /* 기본 하단 테두리 제거 */
   height: 100%; /* 높이 100% */
   display: flex;
-  align-items: center; /* 탭들 세로 중앙 정렬 */
 }
 
 /* 네비게이션 스크롤 버튼 (탭 많을 때) */
 :deep(.el-tabs__nav-prev),
 :deep(.el-tabs__nav-next) {
-  line-height: 40px; /* 컨테이너 높이에 맞춤 */
-  color: #5a5e66;
+  line-height: var(--tagview-height);
+  color: var(--app-text-light-color);
 }
 :deep(.el-tabs__nav-prev:hover),
 :deep(.el-tabs__nav-next:hover) {
-  color: var(--el-color-primary);
+  color: var(--button-primary-color);
 }
-
 
 /* 개별 탭 아이템 */
 :deep(.el-tabs__item) {
-  height: 30px; /* 탭 높이 조정 (컨테이너 높이보다 작게) */
-  line-height: 30px; /* 라인 높이 맞춤 */
-  font-size: 13px; /* 폰트 크기 */
-  margin-right: 5px; /* 탭 간 간격 */
-  border: 1px solid var(--el-border-color-light) !important; /* 테두리 명시 */
-  border-radius: 4px; /* 모서리 둥글게 */
-  padding: 0 15px !important; /* 내부 좌우 패딩 조정 */
-  color: #5a5e66; /* 기본 텍스트 색상 */
-  background-color: #ffffff; /* 기본 배경색 */
-  transition: color 0.3s, background-color 0.3s; /* 부드러운 전환 효과 */
+  box-sizing: border-box;
+  height: calc(var(--tagview-height) - 8px);
+  line-height: calc(var(--tagview-height) - 8px);
+  font-size: 13px;
+  margin-top: 4px;
+  margin-bottom: 4px;
+  margin-right: 5px;
+  border: 1px solid var(--app-border-color) !important;
+  border-radius: 4px;
+  padding: 0 15px !important;
+  color: var(--tagview-text-color);
+  background-color: var(--form-bg-color);
+  transition: color 0.3s, background-color 0.3s, border-color 0.3s;
 }
 /* 탭 호버 스타일 */
 :deep(.el-tabs__item:hover) {
-  color: var(--el-color-primary);
-  border-color: var(--el-color-primary-light-7);
+  color: var(--button-primary-hover);
+  border-color: var(--button-primary-hover) !important;
 }
 
 /* 활성 탭 스타일 */
 :deep(.el-tabs__item.is-active) {
-  color: var(--el-color-primary); /* 활성 탭 텍스트 색상 */
-  border-color: var(--el-color-primary) !important; /* 활성 탭 테두리 색상 */
-  background-color: var(--el-color-primary-light-9); /* 활성 탭 배경색 (연하게) */
-  /* box-shadow: 0 0 3px rgba(0, 0, 0, 0.1); */ /* 입체감 효과 (선택적) */
+  color: var(--tagview-active-text);
+  border-color: var(--tagview-active-bg) !important;
+  background-color: var(--tagview-active-bg);
+  box-shadow: 0 0 3px rgba(0, 0, 0, 0.1);
 }
 
 /* 탭 닫기 버튼 */
 :deep(.el-tabs__item .el-icon) { /* ElIcon 컴포넌트 타겟 */
-  margin-left: 8px; /* 텍스트와의 간격 */
-  vertical-align: middle; /* 세로 중앙 정렬 */
-  border-radius: 50%; /* 원형 배경 */
-  padding: 1px; /* 클릭 영역 확보 */
+  margin-left: 8px;
+  vertical-align: middle;
+  border-radius: 50%;
+  padding: 1px;
   transition: all 0.3s cubic-bezier(.645,.045,.355,1);
+  color: var(--icon-color);
 }
 /* 닫기 버튼 호버 시 */
 :deep(.el-tabs__item .el-icon:hover) {
-  background-color: var(--el-color-danger); /* 호버 배경색 (빨강) */
-  color: white; /* 호버 아이콘 색 (흰색) */
+  background-color: var(--button-danger-color);
+  color: var(--button-text-color);
+}
+
+:deep(.el-tabs__item.is-active .el-icon:hover) {
+  background-color: rgba(255, 255, 255, 0.3); /* 약간 다른 호버 효과 */
+  color: var(--tagview-active-text);
 }
 
 /* 컨텍스트 메뉴 스타일 (이전과 동일) */
 .contextmenu {
   margin: 0;
-  background: #fff;
+  background: var(--card-bg-color);
+  color: var(--app-text-color);
+  box-shadow: 2px 2px 3px 0 rgba(0, 0, 0, .3); /* 다크모드 그림자 유지 또는 조정 */
   z-index: 3000;
   position: absolute;
   list-style-type: none;
@@ -315,8 +323,6 @@ onMounted(() => {
   border-radius: 4px;
   font-size: 12px;
   font-weight: 400;
-  color: #333;
-  box-shadow: 2px 2px 3px 0 rgba(0, 0, 0, .3);
 }
 .contextmenu li {
   margin: 0;
@@ -324,6 +330,6 @@ onMounted(() => {
   cursor: pointer;
 }
 .contextmenu li:hover {
-  background: #eee;
+  background: var(--sidebar-hover-bg);
 }
 </style>

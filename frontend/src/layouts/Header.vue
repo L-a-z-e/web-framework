@@ -14,6 +14,7 @@
     <div class="header-right">
       <slot name="header-right">
         <el-input placeholder="Search..." class="header-search" :prefix-icon="Search" size="small"/>
+        <ThemeToggle />
         <el-tooltip effect="dark" content="알림" placement="bottom">
           <el-badge :value="3" class="item" type="warning">
             <el-icon size="18"><Bell /></el-icon>
@@ -43,6 +44,7 @@ import {
   ElHeader, ElIcon, ElInput, ElBadge, ElDropdown, ElDropdownMenu, ElDropdownItem, ElAvatar, ElBreadcrumb, ElBreadcrumbItem, ElTooltip // Tooltip 추가
 } from 'element-plus';
 import { Expand, Fold, Bell, UserFilled, ArrowDown, Search } from '@element-plus/icons-vue';
+import ThemeToggle from '@/components/ThemeToggle.vue';
 
 defineProps({ isCollapsed: { type: Boolean, default: false } });
 const emit = defineEmits(['toggle-sidebar']);
@@ -59,14 +61,14 @@ async function logout() {
 
 <style scoped>
 .layout-header {
-  background-color: #ffffff;
+  background-color: var(--header-bg-color, #ffffff);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: 50px;
+  height: var(--header-height, 50px);
   padding: 0 20px;
-  border-bottom: 1px solid #f0f2f5;
-  box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
+  border-bottom: 1px solid var(--header-border-color, #f0f2f5);
+  box-shadow: var(--header-shadow, 0 1px 4px rgba(0, 21, 41, 0.08));
 }
 
 .header-left {
@@ -78,10 +80,10 @@ async function logout() {
   font-size: 20px;
   cursor: pointer;
   margin-right: 15px;
-  color: #515a6e;
+  color: var(--icon-color, #515a6e);
 }
 .sidebar-toggle:hover {
-  color: #409EFF;
+  color: var(--button-primary-color, #409EFF);
 }
 
 .el-breadcrumb {
@@ -90,17 +92,17 @@ async function logout() {
 
 .el-breadcrumb :deep(.el-breadcrumb__inner),
 .el-breadcrumb :deep(.el-breadcrumb__separator) {
-  color: #515a6e;
+  color: var(--header-text-color, #515a6e);
   font-weight: normal;
 }
 .el-breadcrumb :deep(.el-breadcrumb__inner a:hover),
 .el-breadcrumb :deep(.el-breadcrumb__inner.is-link:hover) {
-  color: #409EFF;
+  color: var(--button-primary-color, #409EFF);
   cursor: pointer;
 }
 
 .el-breadcrumb :deep(.el-breadcrumb__item:last-child .el-breadcrumb__inner) {
-  color: #303133;
+  color: var(--header-text-color, #303133);
   font-weight: 600;
 }
 
@@ -115,10 +117,11 @@ async function logout() {
 }
 .header-search :deep(.el-input__wrapper) {
   border-radius: 15px;
+  background-color: var(--form-bg-color, #f5f7fa);
 }
 
 .header-right .item .el-icon {
-  color: #515a6e;
+  color: var(--icon-color, #515a6e);
   cursor: pointer;
 }
 .header-right .item .el-badge__content {
@@ -130,11 +133,12 @@ async function logout() {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #515a6e;
+  color: var(--header-text-color, #515a6e);
   font-size: 14px;
 }
 .user-avatar {
-  background-color: #e4e7ed;
-  color: #909399;
+  background-color: var(--form-disabled-bg, #e4e7ed);
+  color: var(--form-disabled-text, #909399);
 }
 </style>
+
